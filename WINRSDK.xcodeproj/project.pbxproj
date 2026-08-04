@@ -1,0 +1,918 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		7D45F3212ED7519E00EC3712 /* amazon.json in Resources */ = {isa = PBXBuildFile; fileRef = 7D45F3202ED7519E00EC3712 /* amazon.json */; };
+		7D61F70E2ED613120039C063 /* WINRSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D61F7022ED613120039C063 /* WINRSDK.framework */; };
+		7D61F7262ED615640039C063 /* WINRSDK.docc in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7232ED615640039C063 /* WINRSDK.docc */; };
+		7D61F7272ED615640039C063 /* WINRSDK.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7242ED615640039C063 /* WINRSDK.swift */; };
+		7D61F72E2ED616380039C063 /* WINR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F72D2ED616330039C063 /* WINR.swift */; };
+		7D61F7302ED616470039C063 /* WINRConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F72F2ED6163B0039C063 /* WINRConfiguration.swift */; };
+		7D61F7322ED616500039C063 /* WINRUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7312ED6164B0039C063 /* WINRUser.swift */; };
+		7D61F7342ED6165A0039C063 /* WINRBranding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7332ED616540039C063 /* WINRBranding.swift */; };
+		7D61F7362ED616680039C063 /* WINRError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7352ED616610039C063 /* WINRError.swift */; };
+		7D61F7382ED616730039C063 /* Giveaway.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7372ED6166F0039C063 /* Giveaway.swift */; };
+		7D61F73A2ED6167B0039C063 /* StreakState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7392ED616770039C063 /* StreakState.swift */; };
+		7D61F73C2ED616850039C063 /* DailyEntryGrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F73B2ED6167E0039C063 /* DailyEntryGrant.swift */; };
+		7D61F73E2ED6168F0039C063 /* StreakEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F73D2ED6168A0039C063 /* StreakEngine.swift */; };
+		7D61F74A2ED619220039C063 /* NetworkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7492ED6191C0039C063 /* NetworkClient.swift */; };
+		7D61F74C2ED6192D0039C063 /* APIRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F74B2ED619270039C063 /* APIRequest.swift */; };
+		7D61F74E2ED619380039C063 /* WINRAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F74D2ED619340039C063 /* WINRAPI.swift */; };
+		7D61F7502ED619440039C063 /* Storage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F74F2ED6193E0039C063 /* Storage.swift */; };
+		7D61F7522ED619810039C063 /* UserDefaultsStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7512ED619800039C063 /* UserDefaultsStorage.swift */; };
+		7D61F7542ED6198A0039C063 /* KeychainStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7532ED619860039C063 /* KeychainStorage.swift */; };
+		7D61F7562ED6199F0039C063 /* AnalyticsAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7552ED6199E0039C063 /* AnalyticsAdapter.swift */; };
+		7D61F75A2ED619B70039C063 /* WINRExperienceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7592ED619B70039C063 /* WINRExperienceViewModel.swift */; };
+		7D61F75C2ED619C30039C063 /* WINRExperienceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F75B2ED619C20039C063 /* WINRExperienceView.swift */; };
+		7D61F75E2ED619CD0039C063 /* WINRExperienceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F75D2ED619CC0039C063 /* WINRExperienceViewController.swift */; };
+		7D61F7662ED61AE40039C063 /* WINRLogo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7652ED61ADC0039C063 /* WINRLogo.swift */; };
+		7D61F7682ED61B010039C063 /* WINROptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7672ED61AFC0039C063 /* WINROptions.swift */; };
+		7D61F76A2ED61B360039C063 /* WINREnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7692ED61B2D0039C063 /* WINREnvironment.swift */; };
+		7D61F76C2ED61BE40039C063 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F76B2ED61BE00039C063 /* Logger.swift */; };
+		7D61F76E2ED61C220039C063 /* DependencyContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F76D2ED61C190039C063 /* DependencyContainer.swift */; };
+		7D61F7742ED61D110039C063 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7D61F7722ED61D110039C063 /* Assets.xcassets */; };
+		7D61F7752ED61D110039C063 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 7D61F7732ED61D110039C063 /* Localizable.strings */; };
+		7D737ADF2ED65EA500B77C8C /* LottieLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D737ADE2ED65EA000B77C8C /* LottieLogoView.swift */; };
+		7DC28E942ED64E2100DF46E4 /* LogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC28E932ED64E1500DF46E4 /* LogoView.swift */; };
+		AA0000012ED8000000000001 /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000012ED8000000000010 /* PushNotificationManager.swift */; };
+		AA0000022ED8000000000002 /* ConsoleAnalyticsAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000022ED8000000000020 /* ConsoleAnalyticsAdapter.swift */; };
+		7DEE1E0B2ED6631C008B684E /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 7DEE1E0A2ED6631C008B684E /* Lottie */; };
+		AB0000212ED9000000000021 /* RemoteLottieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0000012ED9000000000001 /* RemoteLottieView.swift */; };
+		AB0000222ED9000000000022 /* CelebrationOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0000022ED9000000000002 /* CelebrationOverlay.swift */; };
+		AB0000232ED9000000000023 /* HapticEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0000032ED9000000000003 /* HapticEngine.swift */; };
+		AB0000242ED9000000000024 /* WINRV2Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0000042ED9000000000004 /* WINRV2Components.swift */; };
+		AB0000252ED9000000000025 /* WINRV2Effects.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0000052ED9000000000005 /* WINRV2Effects.swift */; };
+		AB0000262ED9000000000026 /* WINRV2Screens.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0000062ED9000000000006 /* WINRV2Screens.swift */; };
+		AB0000272ED9000000000027 /* WINRV2Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0000072ED9000000000007 /* WINRV2Theme.swift */; };
+		AB0000282ED9000000000028 /* WINRV2Winner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0000082ED9000000000008 /* WINRV2Winner.swift */; };
+		AC0000032EDA000000000003 /* TestHostApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000012EDA000000000001 /* TestHostApp.swift */; };
+		AC00000E2EDA00000000000E /* WINRSDK.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D61F7022ED613120039C063 /* WINRSDK.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		AC0000112EDA000000000011 /* WINRSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D61F7022ED613120039C063 /* WINRSDK.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		7D61F70F2ED613120039C063 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7D61F6F92ED613120039C063 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7D61F7012ED613120039C063;
+			remoteInfo = WINRSDK;
+		};
+		AC00000D2EDA00000000000D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7D61F6F92ED613120039C063 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AC0000082EDA000000000008;
+			remoteInfo = WINRSDKTestHost;
+		};
+		AC00000F2EDA00000000000F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7D61F6F92ED613120039C063 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7D61F7012ED613120039C063;
+			remoteInfo = WINRSDK;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AC0000122EDA000000000012 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				AC00000E2EDA00000000000E /* WINRSDK.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		7D45F3202ED7519E00EC3712 /* amazon.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = amazon.json; sourceTree = "<group>"; };
+		7D61F7022ED613120039C063 /* WINRSDK.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = WINRSDK.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		7D61F70D2ED613120039C063 /* WINRSDKTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WINRSDKTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7D61F7232ED615640039C063 /* WINRSDK.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = WINRSDK.docc; sourceTree = "<group>"; };
+		7D61F7242ED615640039C063 /* WINRSDK.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRSDK.swift; sourceTree = "<group>"; };
+		7D61F72D2ED616330039C063 /* WINR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINR.swift; sourceTree = "<group>"; };
+		7D61F72F2ED6163B0039C063 /* WINRConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRConfiguration.swift; sourceTree = "<group>"; };
+		7D61F7312ED6164B0039C063 /* WINRUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRUser.swift; sourceTree = "<group>"; };
+		7D61F7332ED616540039C063 /* WINRBranding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRBranding.swift; sourceTree = "<group>"; };
+		7D61F7352ED616610039C063 /* WINRError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRError.swift; sourceTree = "<group>"; };
+		7D61F7372ED6166F0039C063 /* Giveaway.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Giveaway.swift; sourceTree = "<group>"; };
+		7D61F7392ED616770039C063 /* StreakState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakState.swift; sourceTree = "<group>"; };
+		7D61F73B2ED6167E0039C063 /* DailyEntryGrant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyEntryGrant.swift; sourceTree = "<group>"; };
+		7D61F73D2ED6168A0039C063 /* StreakEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakEngine.swift; sourceTree = "<group>"; };
+		7D61F7492ED6191C0039C063 /* NetworkClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkClient.swift; sourceTree = "<group>"; };
+		7D61F74B2ED619270039C063 /* APIRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRequest.swift; sourceTree = "<group>"; };
+		7D61F74D2ED619340039C063 /* WINRAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRAPI.swift; sourceTree = "<group>"; };
+		7D61F74F2ED6193E0039C063 /* Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage.swift; sourceTree = "<group>"; };
+		7D61F7512ED619800039C063 /* UserDefaultsStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsStorage.swift; sourceTree = "<group>"; };
+		7D61F7532ED619860039C063 /* KeychainStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStorage.swift; sourceTree = "<group>"; };
+		7D61F7552ED6199E0039C063 /* AnalyticsAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsAdapter.swift; sourceTree = "<group>"; };
+		7D61F7592ED619B70039C063 /* WINRExperienceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRExperienceViewModel.swift; sourceTree = "<group>"; };
+		7D61F75B2ED619C20039C063 /* WINRExperienceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRExperienceView.swift; sourceTree = "<group>"; };
+		7D61F75D2ED619CC0039C063 /* WINRExperienceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRExperienceViewController.swift; sourceTree = "<group>"; };
+		7D61F7652ED61ADC0039C063 /* WINRLogo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRLogo.swift; sourceTree = "<group>"; };
+		7D61F7672ED61AFC0039C063 /* WINROptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINROptions.swift; sourceTree = "<group>"; };
+		7D61F7692ED61B2D0039C063 /* WINREnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINREnvironment.swift; sourceTree = "<group>"; };
+		7D61F76B2ED61BE00039C063 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
+		7D61F76D2ED61C190039C063 /* DependencyContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyContainer.swift; sourceTree = "<group>"; };
+		7D61F7722ED61D110039C063 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = text; path = Assets.xcassets; sourceTree = "<group>"; };
+		7D61F7732ED61D110039C063 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = Localizable.strings; sourceTree = "<group>"; };
+		7D737ADE2ED65EA000B77C8C /* LottieLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LottieLogoView.swift; sourceTree = "<group>"; };
+		7DC28E932ED64E1500DF46E4 /* LogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogoView.swift; sourceTree = "<group>"; };
+		AA0000012ED8000000000010 /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
+		AA0000022ED8000000000020 /* ConsoleAnalyticsAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsoleAnalyticsAdapter.swift; sourceTree = "<group>"; };
+		AB0000012ED9000000000001 /* RemoteLottieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteLottieView.swift; sourceTree = "<group>"; };
+		AB0000022ED9000000000002 /* CelebrationOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CelebrationOverlay.swift; sourceTree = "<group>"; };
+		AB0000032ED9000000000003 /* HapticEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticEngine.swift; sourceTree = "<group>"; };
+		AB0000042ED9000000000004 /* WINRV2Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRV2Components.swift; sourceTree = "<group>"; };
+		AB0000052ED9000000000005 /* WINRV2Effects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRV2Effects.swift; sourceTree = "<group>"; };
+		AB0000062ED9000000000006 /* WINRV2Screens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRV2Screens.swift; sourceTree = "<group>"; };
+		AB0000072ED9000000000007 /* WINRV2Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRV2Theme.swift; sourceTree = "<group>"; };
+		AB0000082ED9000000000008 /* WINRV2Winner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRV2Winner.swift; sourceTree = "<group>"; };
+		AC0000012EDA000000000001 /* TestHostApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestHostApp.swift; sourceTree = "<group>"; };
+		AC0000022EDA000000000002 /* WINRSDKTestHost.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WINRSDKTestHost.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		7D61F7112ED613120039C063 /* WINRSDKTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = WINRSDKTests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7D61F6FF2ED613120039C063 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7DEE1E0B2ED6631C008B684E /* Lottie in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7D61F70A2ED613120039C063 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7D61F70E2ED613120039C063 /* WINRSDK.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC0000062EDA000000000006 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AC0000112EDA000000000011 /* WINRSDK.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		7D61F6F82ED613120039C063 = {
+			isa = PBXGroup;
+			children = (
+				7D61F7252ED615640039C063 /* WINRSDK */,
+				7D61F7112ED613120039C063 /* WINRSDKTests */,
+				AC0000042EDA000000000004 /* WINRSDKTestHost */,
+				7D61F7032ED613120039C063 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		7D61F7032ED613120039C063 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				7D61F7022ED613120039C063 /* WINRSDK.framework */,
+				7D61F70D2ED613120039C063 /* WINRSDKTests.xctest */,
+				AC0000022EDA000000000002 /* WINRSDKTestHost.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7D61F7252ED615640039C063 /* WINRSDK */ = {
+			isa = PBXGroup;
+			children = (
+				7D61F76D2ED61C190039C063 /* DependencyContainer.swift */,
+				7D61F72C2ED615A90039C063 /* Resources */,
+				7D61F72B2ED615A20039C063 /* Presentation */,
+				7D61F72A2ED6159A0039C063 /* Services */,
+				7D61F7292ED615890039C063 /* Domain */,
+				7D61F7282ED6156A0039C063 /* Public */,
+				7D61F7232ED615640039C063 /* WINRSDK.docc */,
+				7D61F7242ED615640039C063 /* WINRSDK.swift */,
+				7D45F3202ED7519E00EC3712 /* amazon.json */,
+			);
+			path = WINRSDK;
+			sourceTree = "<group>";
+		};
+		7D61F7282ED6156A0039C063 /* Public */ = {
+			isa = PBXGroup;
+			children = (
+				7D61F7692ED61B2D0039C063 /* WINREnvironment.swift */,
+				7D61F7672ED61AFC0039C063 /* WINROptions.swift */,
+				7D61F7652ED61ADC0039C063 /* WINRLogo.swift */,
+				7D61F7352ED616610039C063 /* WINRError.swift */,
+				7D61F7332ED616540039C063 /* WINRBranding.swift */,
+				7D61F7312ED6164B0039C063 /* WINRUser.swift */,
+				7D61F72F2ED6163B0039C063 /* WINRConfiguration.swift */,
+				7D61F72D2ED616330039C063 /* WINR.swift */,
+			);
+			path = Public;
+			sourceTree = "<group>";
+		};
+		7D61F7292ED615890039C063 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				7D61F73D2ED6168A0039C063 /* StreakEngine.swift */,
+				7D61F73B2ED6167E0039C063 /* DailyEntryGrant.swift */,
+				7D61F7392ED616770039C063 /* StreakState.swift */,
+				7D61F7372ED6166F0039C063 /* Giveaway.swift */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		7D61F72A2ED6159A0039C063 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000012ED8000000000010 /* PushNotificationManager.swift */,
+				AB0000032ED9000000000003 /* HapticEngine.swift */,
+				7D61F76B2ED61BE00039C063 /* Logger.swift */,
+				7D61F7472ED617EB0039C063 /* Analytics */,
+				7D61F7462ED617E30039C063 /* Storage */,
+				7D61F7452ED617DB0039C063 /* Networking */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		7D61F72B2ED615A20039C063 /* Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				7DC28E922ED64E0D00DF46E4 /* Brand */,
+				7D61F7412ED617BA0039C063 /* Experience */,
+				AB0000112ED9000000000011 /* Shared */,
+				AB0000122ED9000000000012 /* V2 */,
+			);
+			path = Presentation;
+			sourceTree = "<group>";
+		};
+		7D61F72C2ED615A90039C063 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				7D61F7722ED61D110039C063 /* Assets.xcassets */,
+				7D61F7732ED61D110039C063 /* Localizable.strings */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		7D61F7412ED617BA0039C063 /* Experience */ = {
+			isa = PBXGroup;
+			children = (
+				7D61F75D2ED619CC0039C063 /* WINRExperienceViewController.swift */,
+				7D61F75B2ED619C20039C063 /* WINRExperienceView.swift */,
+				7D61F7592ED619B70039C063 /* WINRExperienceViewModel.swift */,
+			);
+			path = Experience;
+			sourceTree = "<group>";
+		};
+		7D61F7452ED617DB0039C063 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				7D61F74D2ED619340039C063 /* WINRAPI.swift */,
+				7D61F74B2ED619270039C063 /* APIRequest.swift */,
+				7D61F7492ED6191C0039C063 /* NetworkClient.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		7D61F7462ED617E30039C063 /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				7D61F7532ED619860039C063 /* KeychainStorage.swift */,
+				7D61F7512ED619800039C063 /* UserDefaultsStorage.swift */,
+				7D61F74F2ED6193E0039C063 /* Storage.swift */,
+			);
+			path = Storage;
+			sourceTree = "<group>";
+		};
+		7D61F7472ED617EB0039C063 /* Analytics */ = {
+			isa = PBXGroup;
+			children = (
+				7D61F7552ED6199E0039C063 /* AnalyticsAdapter.swift */,
+				AA0000022ED8000000000020 /* ConsoleAnalyticsAdapter.swift */,
+			);
+			path = Analytics;
+			sourceTree = "<group>";
+		};
+		7DC28E922ED64E0D00DF46E4 /* Brand */ = {
+			isa = PBXGroup;
+			children = (
+				7D737ADE2ED65EA000B77C8C /* LottieLogoView.swift */,
+				7DC28E932ED64E1500DF46E4 /* LogoView.swift */,
+				AB0000012ED9000000000001 /* RemoteLottieView.swift */,
+			);
+			path = Brand;
+			sourceTree = "<group>";
+		};
+		AB0000112ED9000000000011 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				AB0000022ED9000000000002 /* CelebrationOverlay.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		AB0000122ED9000000000012 /* V2 */ = {
+			isa = PBXGroup;
+			children = (
+				AB0000042ED9000000000004 /* WINRV2Components.swift */,
+				AB0000052ED9000000000005 /* WINRV2Effects.swift */,
+				AB0000062ED9000000000006 /* WINRV2Screens.swift */,
+				AB0000072ED9000000000007 /* WINRV2Theme.swift */,
+				AB0000082ED9000000000008 /* WINRV2Winner.swift */,
+			);
+			path = V2;
+			sourceTree = "<group>";
+		};
+		AC0000042EDA000000000004 /* WINRSDKTestHost */ = {
+			isa = PBXGroup;
+			children = (
+				AC0000012EDA000000000001 /* TestHostApp.swift */,
+			);
+			path = WINRSDKTestHost;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		7D61F6FD2ED613120039C063 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		7D61F7012ED613120039C063 /* WINRSDK */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7D61F7162ED613120039C063 /* Build configuration list for PBXNativeTarget "WINRSDK" */;
+			buildPhases = (
+				7D61F6FD2ED613120039C063 /* Headers */,
+				7D61F6FE2ED613120039C063 /* Sources */,
+				7D61F6FF2ED613120039C063 /* Frameworks */,
+				7D61F7002ED613120039C063 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WINRSDK;
+			packageProductDependencies = (
+				7DEE1E0A2ED6631C008B684E /* Lottie */,
+			);
+			productName = WINRSDK;
+			productReference = 7D61F7022ED613120039C063 /* WINRSDK.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		7D61F70C2ED613120039C063 /* WINRSDKTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7D61F7192ED613120039C063 /* Build configuration list for PBXNativeTarget "WINRSDKTests" */;
+			buildPhases = (
+				7D61F7092ED613120039C063 /* Sources */,
+				7D61F70A2ED613120039C063 /* Frameworks */,
+				7D61F70B2ED613120039C063 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7D61F7102ED613120039C063 /* PBXTargetDependency */,
+				AC00000C2EDA00000000000C /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				7D61F7112ED613120039C063 /* WINRSDKTests */,
+			);
+			name = WINRSDKTests;
+			packageProductDependencies = (
+			);
+			productName = WINRSDKTests;
+			productReference = 7D61F70D2ED613120039C063 /* WINRSDKTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		AC0000082EDA000000000008 /* WINRSDKTestHost */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AC0000092EDA000000000009 /* Build configuration list for PBXNativeTarget "WINRSDKTestHost" */;
+			buildPhases = (
+				AC0000052EDA000000000005 /* Sources */,
+				AC0000062EDA000000000006 /* Frameworks */,
+				AC0000072EDA000000000007 /* Resources */,
+				AC0000122EDA000000000012 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AC0000102EDA000000000010 /* PBXTargetDependency */,
+			);
+			name = WINRSDKTestHost;
+			packageProductDependencies = (
+			);
+			productName = WINRSDKTestHost;
+			productReference = AC0000022EDA000000000002 /* WINRSDKTestHost.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		7D61F6F92ED613120039C063 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					7D61F7012ED613120039C063 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					7D61F70C2ED613120039C063 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+				};
+			};
+			buildConfigurationList = 7D61F6FC2ED613120039C063 /* Build configuration list for PBXProject "WINRSDK" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 7D61F6F82ED613120039C063;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				7DEE1E092ED6631C008B684E /* XCRemoteSwiftPackageReference "lottie-ios" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 7D61F7032ED613120039C063 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7D61F7012ED613120039C063 /* WINRSDK */,
+				7D61F70C2ED613120039C063 /* WINRSDKTests */,
+				AC0000082EDA000000000008 /* WINRSDKTestHost */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		7D61F7002ED613120039C063 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7D61F7742ED61D110039C063 /* Assets.xcassets in Resources */,
+				7D45F3212ED7519E00EC3712 /* amazon.json in Resources */,
+				7D61F7752ED61D110039C063 /* Localizable.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7D61F70B2ED613120039C063 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC0000072EDA000000000007 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7D61F6FE2ED613120039C063 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7D61F7522ED619810039C063 /* UserDefaultsStorage.swift in Sources */,
+				7D61F7362ED616680039C063 /* WINRError.swift in Sources */,
+				7D61F7382ED616730039C063 /* Giveaway.swift in Sources */,
+				7D61F74C2ED6192D0039C063 /* APIRequest.swift in Sources */,
+				7D61F75C2ED619C30039C063 /* WINRExperienceView.swift in Sources */,
+				7D61F76C2ED61BE40039C063 /* Logger.swift in Sources */,
+				7D61F76A2ED61B360039C063 /* WINREnvironment.swift in Sources */,
+				7D61F75A2ED619B70039C063 /* WINRExperienceViewModel.swift in Sources */,
+				7D61F7662ED61AE40039C063 /* WINRLogo.swift in Sources */,
+				7D61F73A2ED6167B0039C063 /* StreakState.swift in Sources */,
+				7D61F73C2ED616850039C063 /* DailyEntryGrant.swift in Sources */,
+				7D61F7682ED61B010039C063 /* WINROptions.swift in Sources */,
+				7D61F73E2ED6168F0039C063 /* StreakEngine.swift in Sources */,
+				7D61F7342ED6165A0039C063 /* WINRBranding.swift in Sources */,
+				7D61F76E2ED61C220039C063 /* DependencyContainer.swift in Sources */,
+				7D737ADF2ED65EA500B77C8C /* LottieLogoView.swift in Sources */,
+				7D61F7262ED615640039C063 /* WINRSDK.docc in Sources */,
+				7D61F7272ED615640039C063 /* WINRSDK.swift in Sources */,
+				7DC28E942ED64E2100DF46E4 /* LogoView.swift in Sources */,
+				7D61F7322ED616500039C063 /* WINRUser.swift in Sources */,
+				7D61F7542ED6198A0039C063 /* KeychainStorage.swift in Sources */,
+				7D61F7562ED6199F0039C063 /* AnalyticsAdapter.swift in Sources */,
+				7D61F7302ED616470039C063 /* WINRConfiguration.swift in Sources */,
+				7D61F72E2ED616380039C063 /* WINR.swift in Sources */,
+				7D61F75E2ED619CD0039C063 /* WINRExperienceViewController.swift in Sources */,
+				7D61F74E2ED619380039C063 /* WINRAPI.swift in Sources */,
+				7D61F74A2ED619220039C063 /* NetworkClient.swift in Sources */,
+				7D61F7502ED619440039C063 /* Storage.swift in Sources */,
+				AA0000012ED8000000000001 /* PushNotificationManager.swift in Sources */,
+				AA0000022ED8000000000002 /* ConsoleAnalyticsAdapter.swift in Sources */,
+				AB0000212ED9000000000021 /* RemoteLottieView.swift in Sources */,
+				AB0000222ED9000000000022 /* CelebrationOverlay.swift in Sources */,
+				AB0000232ED9000000000023 /* HapticEngine.swift in Sources */,
+				AB0000242ED9000000000024 /* WINRV2Components.swift in Sources */,
+				AB0000252ED9000000000025 /* WINRV2Effects.swift in Sources */,
+				AB0000262ED9000000000026 /* WINRV2Screens.swift in Sources */,
+				AB0000272ED9000000000027 /* WINRV2Theme.swift in Sources */,
+				AB0000282ED9000000000028 /* WINRV2Winner.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7D61F7092ED613120039C063 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC0000052EDA000000000005 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AC0000032EDA000000000003 /* TestHostApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		7D61F7102ED613120039C063 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7D61F7012ED613120039C063 /* WINRSDK */;
+			targetProxy = 7D61F70F2ED613120039C063 /* PBXContainerItemProxy */;
+		};
+		AC00000C2EDA00000000000C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AC0000082EDA000000000008 /* WINRSDKTestHost */;
+			targetProxy = AC00000D2EDA00000000000D /* PBXContainerItemProxy */;
+		};
+		AC0000102EDA000000000010 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7D61F7012ED613120039C063 /* WINRSDK */;
+			targetProxy = AC00000F2EDA00000000000F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		7D61F7142ED613120039C063 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 2VZHH854RQ;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		7D61F7152ED613120039C063 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 2VZHH854RQ;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		7D61F7172ED613120039C063 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2VZHH854RQ;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+				PRODUCT_BUNDLE_IDENTIFIER = com.winr.WINRSDK;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_INSTALL_MODULE = YES;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		7D61F7182ED613120039C063 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2VZHH854RQ;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+				PRODUCT_BUNDLE_IDENTIFIER = com.winr.WINRSDK;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_INSTALL_MODULE = YES;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		7D61F71A2ED613120039C063 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2VZHH854RQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.winr.WINRSDKTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WINRSDKTestHost.app/WINRSDKTestHost";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		7D61F71B2ED613120039C063 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2VZHH854RQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.winr.WINRSDKTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WINRSDKTestHost.app/WINRSDKTestHost";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		AC00000A2EDA00000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2VZHH854RQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.winr.WINRSDKTestHost;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AC00000B2EDA00000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2VZHH854RQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.winr.WINRSDKTestHost;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7D61F6FC2ED613120039C063 /* Build configuration list for PBXProject "WINRSDK" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7D61F7142ED613120039C063 /* Debug */,
+				7D61F7152ED613120039C063 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7D61F7162ED613120039C063 /* Build configuration list for PBXNativeTarget "WINRSDK" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7D61F7172ED613120039C063 /* Debug */,
+				7D61F7182ED613120039C063 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7D61F7192ED613120039C063 /* Build configuration list for PBXNativeTarget "WINRSDKTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7D61F71A2ED613120039C063 /* Debug */,
+				7D61F71B2ED613120039C063 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AC0000092EDA000000000009 /* Build configuration list for PBXNativeTarget "WINRSDKTestHost" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC00000A2EDA00000000000A /* Debug */,
+				AC00000B2EDA00000000000B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		7DEE1E092ED6631C008B684E /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/lottie-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.5.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		7DEE1E0A2ED6631C008B684E /* Lottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7DEE1E092ED6631C008B684E /* XCRemoteSwiftPackageReference "lottie-ios" */;
+			productName = Lottie;
+		};
+	/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 7D61F6F92ED613120039C063 /* Project object */;
+}

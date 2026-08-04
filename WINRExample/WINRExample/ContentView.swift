@@ -1,0 +1,258 @@
+//
+//  ContentView.swift
+//  WINRExample
+//
+//  The example app's main screen with a "Launch WINR Experience" button.
+//  This demonstrates how to present the WINR SDK from SwiftUI.
+//
+
+import SwiftUI
+import WINRSDK
+
+struct ContentView: View {
+    
+    @State private var isAnimating = false
+    @State private var showAlert = false
+    @State private var logoIsLoaded = false
+    
+    var body: some View {
+        ZStack {
+            // Dynamic gradient background matching WINR SDK vibe
+            LinearGradient(
+                colors: [
+                    Color(hex: "#020617"),
+                    Color(hex: "#1e3a8a"),
+                    Color(hex: "#7c3aed")
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Floating particles animation (cool factor!)
+            ForEach(0..<20) { index in
+                Circle()
+                    .fill(Color.white.opacity(0.1))
+                    .frame(width: CGFloat.random(in: 2...8), height: CGFloat.random(in: 2...8))
+                    .position(
+                        x: CGFloat.random(in: 0...UIScreen.main.bounds.width),
+                        y: CGFloat.random(in: 0...UIScreen.main.bounds.height)
+                    )
+                    .onAppear {
+                        withAnimation(.linear(duration: Double.random(in: 10...20)).repeatForever(autoreverses: true)) {
+                            // Subtle float
+                        }
+                    }
+            }
+            
+            VStack(spacing: 40) {
+                // AVAFLI Logo Section (with fallback & debug)
+                Group {
+                    if logoIsLoaded {
+                        // Loaded PNG
+                        // Works 100% with loose PNG files in the bundle
+                        Image(uiImage: UIImage(named: "avafli-logo") ?? UIImage())
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 120)
+                            .padding(.top, 80)
+                            .scaleEffect(isAnimating ? 1.0 : 0.8)
+                            .opacity(isAnimating ? 1.0 : 0.5)
+                            .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: isAnimating)
+                    } else {
+                        // Fallback: Styled text logo
+                        Text("AVAFLI")
+                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.white, Color(hex: "#7c3aed")],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(height: 120)
+                            .scaleEffect(isAnimating ? 1.0 : 0.8)
+                            .opacity(isAnimating ? 1.0 : 0.5)
+                            .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: isAnimating)
+                    }
+                }
+                
+                // Welcome Text (bold, glowing)
+                HStack(alignment: .firstTextBaseline, spacing: 0) {
+                    Text("Welcome to the ")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.white, .blue.opacity(0.8)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .shadow(color: .blue.opacity(0.3), radius: 10)
+
+                    Text("WINR")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.white, .blue.opacity(0.8)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .shadow(color: .blue.opacity(0.3), radius: 10)
+
+                    Text("™")
+                        .font(.system(size: 16, weight: .bold, design: .rounded))  // Smaller, but bold
+                        .foregroundColor(.white.opacity(0.9))
+                        .baselineOffset(6)  // Perfectly aligns with cap height of WINR
+                        .shadow(color: .blue.opacity(0.3), radius: 8)
+
+                    Text(" iOS SDK")
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.white, .blue.opacity(0.8)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .shadow(color: .blue.opacity(0.3), radius: 10)
+                }
+                .multilineTextAlignment(.center)
+                .opacity(isAnimating ? 1.0 : 0.0)
+                .scaleEffect(isAnimating ? 1.0 : 0.9)
+                .animation(.easeOut(duration: 1.0).delay(0.5), value: isAnimating)
+                
+                // WINR Launch Button (glassmorphism + pulse)
+                Button(action: launchWINR) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "sparkles")
+                            .font(.title2)
+                            .foregroundStyle(.white)
+                        
+                        Text("Launch WINR Experience")
+                            .font(.system(size: 20, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.white)
+                    }
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color(hex: "#0284FF"),
+                                        Color(hex: "#0EA5E9")
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 24)
+                                    .stroke(.white.opacity(0.2), lineWidth: 1)
+                            )
+                            .shadow(color: Color(hex: "#0284FF").opacity(0.3), radius: 20, x: 0, y: 10)
+                    )
+                    .scaleEffect(isAnimating ? 1.0 : 0.95)
+                }
+                .scaleEffect(isAnimating ? 1.0 : 0.0)
+                .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(1.0), value: isAnimating)
+
+                // DEMO ONLY: clears the SDK's once-per-day auto-present mark and the
+                // unregistered impression counter so the team can re-test the V2
+                // auto-open flow without waiting for tomorrow. Kill + relaunch the
+                // app after tapping — the drawer will auto-present again.
+                Button(action: resetDemoState) {
+                    Label("Reset demo state (auto-open again)", systemImage: "arrow.counterclockwise")
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+                .opacity(isAnimating ? 1.0 : 0.0)
+                .animation(.easeOut(duration: 1.0).delay(1.3), value: isAnimating)
+
+                Spacer()
+                Text("© 2026 AVAFLI, LLC. • WINR™ • All rights reserved.")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+            }
+            .padding()
+        }
+        .onAppear {
+            // Debug logo loading
+            if let path = Bundle.main.path(forResource: "avafli-logo", ofType: "png") {
+                print("✅ AVAFLI PNG found: \(path)")
+                logoIsLoaded = true
+            } else {
+                print("❌ AVAFLI PNG not found! Check: 1) Exact name 'avafli-logo.png', 2) Target membership, 3) Clean build.")
+                logoIsLoaded = false
+            }
+            isAnimating = true
+        }
+        .alert("WINR SDK Demo", isPresented: $showAlert) {
+            Button("OK") { }
+        } message: {
+            Text("Check console for entry results! 🎉")
+        }
+    }
+    
+    private func resetDemoState() {
+        // The SDK namespaces its auto-present bookkeeping by bundle id.
+        let bundleId = Bundle.main.bundleIdentifier ?? "com.avafli.winr.example"
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: "winr_last_auto_present_\(bundleId)")
+        defaults.removeObject(forKey: "winr_unregistered_impressions_\(bundleId)")
+        print("🔄 WINR demo state reset — kill and relaunch the app to see auto-open again")
+    }
+
+    private func launchWINR() {
+        // Bridge to UIKit for WINR presentation
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootVC = windowScene.windows.first?.rootViewController {
+            WINR.present(from: rootVC) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(let grant):
+                        print("🎉 WINR entries claimed: base=\(grant.baseEntries), bonus=\(grant.bonusEntries)")
+                        showAlert = true
+                    case .failure(let error):
+                        print("❌ WINR error: \(error)")
+                        showAlert = true
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Hex Color Extension
+extension Color {
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (1, 1, 1, 0)
+        }
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue:  Double(b) / 255,
+            opacity: Double(a) / 255
+        )
+    }
+}
+
+#Preview {
+    ContentView()
+}
