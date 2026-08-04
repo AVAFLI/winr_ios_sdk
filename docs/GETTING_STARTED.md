@@ -32,14 +32,14 @@ The SDK uses SwiftUI for its presentation layer and requires a UIKit host app (U
    ```
    https://github.com/AVAFLI/winr_ios_sdk.git
    ```
-3. Set the dependency rule to **Up to Next Major Version** from `2.0.0`
+3. Set the dependency rule to **Up to Next Major Version** from `2.1.0`
 4. Add the `WINRSDK` library to your app target
 
 Or in `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.0.0")
+    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.1.0")
 ]
 ```
 
