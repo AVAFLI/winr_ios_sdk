@@ -11,7 +11,7 @@ import SwiftUI
 public enum WINRConstants {
     /// Single source of truth for the SDK version. MUST match `WINRSDK.podspec`
     /// (`s.version`) and the latest CHANGELOG entry. Format: `v<major>.<minor>.<patch>`.
-    public static let sdkVersion = "2.1.0"
+    public static let sdkVersion = "2.2.0"
     public static let platformOS = "iOS"
     
     // Hardcoded legal URLs — consistent across all publishers

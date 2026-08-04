@@ -265,7 +265,9 @@ struct WINRV2RailEntry: Identifiable {
         case day(day: Int, entries: Int, state: TileState)
         case powerUp(label: String, bonus: Int, footnote: String)
     }
-    enum TileState { case completed, active, locked }
+    /// `ready` = today's tile before the user taps CLAIM (claim already granted
+    /// server-side, reveal withheld): glows like `active` but shows no checkmark.
+    enum TileState { case completed, active, ready, locked }
     let id: String
     let kind: Kind
 }
@@ -340,7 +342,8 @@ struct WINRV2StreakTile: View {
     private var noun: String { visitMode ? "VISIT" : "DAY" }
 
     var body: some View {
-        if state == .active {
+        switch state {
+        case .active:
             // Joe's active-tile motion: breathing glow + confetti specks
             // scattered around the tile.
             card
@@ -349,7 +352,11 @@ struct WINRV2StreakTile: View {
                     WINRV2ConfettiView(style: .celebration, count: 12, speed: 0.7)
                         .frame(width: 152, height: 176)
                 )
-        } else {
+        case .ready:
+            // Pre-reveal: glow draws the eye to CLAIM, but the confetti and
+            // checkmark are saved for the reveal moment.
+            card.winrPulseGlow(accent)
+        default:
             card
         }
     }
@@ -390,7 +397,7 @@ struct WINRV2StreakTile: View {
     private var numberColor: Color {
         switch state {
         case .completed: return accent
-        case .active: return .white
+        case .active, .ready: return .white
         case .locked: return WINRV2Color.foregroundSecondary
         }
     }
@@ -400,7 +407,7 @@ struct WINRV2StreakTile: View {
     }
 
     @ViewBuilder private var background: some View {
-        if state == .active {
+        if state == .active || state == .ready {
             RadialGradient(
                 stops: [
                     .init(color: accent, location: 0),
@@ -421,6 +428,11 @@ struct WINRV2StreakTile: View {
         case .active:
             WINRV2AnimatedCheckmark(lineWidth: 2.5)
                 .frame(width: 20, height: 20)
+        case .ready:
+            Image("winr-flame", bundle: .module)
+                .resizable().scaledToFit()
+                .frame(width: 16, height: 20)
+                .foregroundColor(.white)
         case .locked:
             Image("winr-lock", bundle: .module)
                 .resizable().scaledToFit()

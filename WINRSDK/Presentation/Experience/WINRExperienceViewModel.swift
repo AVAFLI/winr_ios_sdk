@@ -73,6 +73,26 @@ final class WINRExperienceViewModel: ObservableObject {
 
     @Published var isSubmittingEmail = false
 
+    // MARK: - V2 reveal flow (Day 2+)
+    //
+    // The auto-claim on open grants entries server-side immediately, but the UI
+    // holds the previous day's numbers until the user taps "CLAIM N ENTRIES".
+    // That tap flips `claimRevealed` — the day tile checks off with confetti,
+    // the streak label and totals advance, and the pill becomes "GOT IT".
+
+    /// The grant held back for the reveal (nil when nothing is pending).
+    @Published private(set) var pendingRevealGrant: DailyEntryGrant?
+    /// Whether the user has tapped CLAIM and seen the in-place celebration.
+    @Published private(set) var claimRevealed = false
+    /// Total entries as of before today's claim, for pre-reveal display.
+    private(set) var preClaimTotalEntries: Int?
+
+    @MainActor
+    func revealClaim() {
+        guard pendingRevealGrant != nil, !claimRevealed else { return }
+        claimRevealed = true
+    }
+
     /// Current streak day for display (backend truth, falling back to local).
     var displayStreakDay: Int {
         if let day = cachedBackendStreakDay { return day }
@@ -432,11 +452,21 @@ final class WINRExperienceViewModel: ObservableObject {
                 try? container.storage.save(updatedStreak, for: streakStorageKey)
                 claimedToday = true
 
-                // Show milestone celebration if applicable, then proceed to confirmation
-                // Prefer lifetime milestone, fall back to monthly milestone
-                // V2: an auto-claim always lands on the celebration modal.
+                // V2 auto-claim routing:
+                // - Day 1 (brand-new or restarted streak, typically right after email
+                //   capture): the "You're in!" celebration modal is the reveal.
+                // - Day 2+: no modal. Land on the dashboard pinned to yesterday's
+                //   numbers with a "CLAIM N ENTRIES" pill; the tap reveals the
+                //   celebration in place (Joe's Slice Day 2+ flow).
                 if auto {
-                    state = .dailyConfirmed(grant, totalEntries: response.totalEntries)
+                    if response.streakDay <= 1 {
+                        state = .dailyConfirmed(grant, totalEntries: response.totalEntries)
+                    } else {
+                        pendingRevealGrant = grant
+                        claimRevealed = false
+                        preClaimTotalEntries = response.totalEntries - (grant.baseEntries + grant.bonusEntries)
+                        state = .streak(updatedStreak, response.entries, ladder)
+                    }
                     isClaimingDaily = false
                     return
                 }

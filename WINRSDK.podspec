@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'WINRSDK'
-  s.version          = '2.1.0'
+  s.version          = '2.2.0'
   s.summary          = 'Sweepstakes-as-a-Service SDK for iOS apps'
   s.description      = <<-DESC
     WINR SDK enables app publishers to instantly add sweepstakes and prizing
@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
   s.homepage         = 'https://winfrastructure.us'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'Avafli' => 'team@avafli.com' }
-  s.source           = { :git => 'https://github.com/AVAFLI/winr_ios_sdk.git', :tag => s.version.to_s }
+  s.source           = { :git => 'https://github.com/AVAFLI/winr_ios_sdk.git', :tag => "v#{s.version}" }
 
   s.ios.deployment_target = '15.0'
   s.swift_version    = '5.9'

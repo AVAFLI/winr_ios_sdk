@@ -76,19 +76,29 @@ struct WINRV2ExperienceRoot: View {
                     onClose: { viewModel.requestDismiss() }
                 )
             case let .streak(streak, entriesToday, ladder):
+                let preReveal = viewModel.pendingRevealGrant != nil && !viewModel.claimRevealed
                 WINRV2DashboardView(
                     accent: accent,
                     logoUrl: logoUrl,
                     rulesUrl: rulesUrl,
                     giveaway: viewModel.activeGiveawayConfig,
                     streakDay: streak.currentDay,
-                    totalEntries: streak.totalEntriesEarned,
+                    totalEntries: preReveal
+                        ? (viewModel.preClaimTotalEntries ?? streak.totalEntriesEarned)
+                        : viewModel.displayTotalEntries,
                     entriesToday: entriesToday,
                     ladder: ladder,
                     claimedToday: viewModel.claimedToday,
                     onInfo: { viewModel.showHowItWorks() },
                     onClose: { viewModel.requestDismiss() },
-                    onWinnerTap: { showWinnerModal = true }
+                    onWinnerTap: { showWinnerModal = true },
+                    pendingClaimEntries: viewModel.pendingRevealGrant.map { $0.baseEntries + $0.bonusEntries },
+                    revealed: viewModel.claimRevealed,
+                    onClaim: {
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                            viewModel.revealClaim()
+                        }
+                    }
                 )
             case let .dailyConfirmed(grant, totalEntries):
                 // Dashboard behind + celebration modal on top.
@@ -113,7 +123,9 @@ struct WINRV2ExperienceRoot: View {
                         earnedEntries: grant.baseEntries + grant.bonusEntries,
                         nextEntries: viewModel.displayNextEntries,
                         visitMode: viewModel.activeGiveawayConfig?.streakMode == "visit",
-                        onDismiss: { viewModel.showDashboardAfterCelebration() }
+                        // Day-1 modal is the reveal for brand-new streaks; GOT IT
+                        // closes the whole experience until the next day's open.
+                        onDismiss: { viewModel.requestDismiss() }
                     )
                 }
             case let .completed(grant):
@@ -236,7 +248,7 @@ struct WINRV2CaptureView: View {
 
                         WINRV2PillButton(
                             accent: accent,
-                            title: "GET MY \(day1Entries) ENTRIES",
+                            title: "CLAIM MY \(day1Entries) ENTRIES",
                             isLoading: isSubmitting
                         ) {
                             onSubmit(email.trimmingCharacters(in: .whitespacesAndNewlines))
@@ -338,8 +350,15 @@ struct WINRV2DashboardView: View {
     let onInfo: () -> Void
     let onClose: () -> Void
     var onWinnerTap: (() -> Void)? = nil
+    /// Reveal flow (Day 2+): the claim already succeeded server-side, but the UI
+    /// holds yesterday's numbers until the user taps "CLAIM N ENTRIES" — that tap
+    /// is the celebration (tile check + confetti + totals update), no modal.
+    var pendingClaimEntries: Int? = nil
+    var revealed = true
+    var onClaim: (() -> Void)? = nil
 
     private var visitMode: Bool { giveaway?.streakMode == "visit" }
+    private var preReveal: Bool { pendingClaimEntries != nil && !revealed }
 
     private func ladderValue(day: Int) -> Int {
         WINRV2Ladder.entries(day: day, ladder: ladder, milestones: giveaway?.milestones)
@@ -356,7 +375,7 @@ struct WINRV2DashboardView: View {
         for day in 1...maxDay {
             let state: WINRV2RailEntry.TileState =
                 day < streakDay ? .completed :
-                (day == streakDay ? (claimedToday ? .active : .active) : .locked)
+                (day == streakDay ? (preReveal ? .ready : .active) : .locked)
             entries.append(.init(id: "day-\(day)", kind: .day(day: day, entries: ladderValue(day: day), state: state)))
             if let bonus = milestoneDays[day] {
                 let label: String
@@ -386,7 +405,7 @@ struct WINRV2DashboardView: View {
                     }
                     WINRV2PrizeCard(
                         accent: accent,
-                        streakDay: streakDay,
+                        streakDay: preReveal ? max(streakDay - 1, 1) : streakDay,
                         totalEntries: totalEntries,
                         prizeImageUrl: giveaway?.prizeImageUrl,
                         prizeValue: Int(giveaway?.prizeValue ?? 0),
@@ -405,8 +424,13 @@ struct WINRV2DashboardView: View {
                     WINRV2ComeBackBar(accent: accent, nextEntries: nextEntries, visitMode: visitMode)
 
                     VStack(spacing: 6) {
-                        WINRV2PillButton(accent: accent, title: "GOT IT") { onClose() }
-                            .padding(.horizontal, 30)
+                        if preReveal, let pending = pendingClaimEntries, let onClaim {
+                            WINRV2PillButton(accent: accent, title: "CLAIM \(pending.formatted()) ENTRIES") { onClaim() }
+                                .padding(.horizontal, 30)
+                        } else {
+                            WINRV2PillButton(accent: accent, title: "GOT IT") { onClose() }
+                                .padding(.horizontal, 30)
+                        }
                         WINRV2LegalLinks(rulesUrl: rulesUrl)
                     }
                     .padding(.bottom, 24)

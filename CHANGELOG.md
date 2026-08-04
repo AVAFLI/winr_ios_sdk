@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.2.0] - 2026-08-04
+
+### Changed (BREAKING UX)
+- Day 2+ reveal flow: the auto-claim still fires silently on open, but the UI
+  now holds the previous day's numbers behind a "CLAIM N ENTRIES" pill; the tap
+  reveals the celebration in place (tile check + confetti, streak/total advance)
+  and the pill becomes GOT IT. No celebration modal for returning users.
+- Day-1 celebration modal's GOT IT now closes the whole experience.
+- Email-capture CTA renamed to "CLAIM MY N ENTRIES".
+
 All notable changes to the WINR SDK will be documented in this file.
 
 ## [2.1.0] - 2026-08-04
