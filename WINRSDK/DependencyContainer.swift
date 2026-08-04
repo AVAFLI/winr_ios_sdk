@@ -34,10 +34,6 @@ struct DependencyContainer {
             switch configuration.environment {
             case .production:
                 return URL(string: "https://us-central1-winr-9c11f.cloudfunctions.net")!
-            case .staging:
-                return URL(string: "https://us-central1-winr-9c11f.cloudfunctions.net")!
-            case .qa:
-                return URL(string: "https://us-central1-winr-9c11f.cloudfunctions.net")!
             }
         }()
 

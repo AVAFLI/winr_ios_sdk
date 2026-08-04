@@ -2,8 +2,9 @@
 //  ContentView.swift
 //  WINRExample
 //
-//  The example app's main screen with a "Launch WINR Experience" button.
-//  This demonstrates how to present the WINR SDK from SwiftUI.
+//  The example app's main screen. The WINR experience is auto-opened by the
+//  SDK once per day — there is no manual launch. Use "Reset demo state" then
+//  kill + relaunch the app to see the auto-open again.
 //
 
 import SwiftUI
@@ -12,7 +13,6 @@ import WINRSDK
 struct ContentView: View {
     
     @State private var isAnimating = false
-    @State private var showAlert = false
     @State private var logoIsLoaded = false
     
     var body: some View {
@@ -123,43 +123,30 @@ struct ContentView: View {
                 .scaleEffect(isAnimating ? 1.0 : 0.9)
                 .animation(.easeOut(duration: 1.0).delay(0.5), value: isAnimating)
                 
-                // WINR Launch Button (glassmorphism + pulse)
-                Button(action: launchWINR) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "sparkles")
-                            .font(.title2)
-                            .foregroundStyle(.white)
-                        
-                        Text("Launch WINR Experience")
-                            .font(.system(size: 20, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.white)
-                    }
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 24)
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        Color(hex: "#0284FF"),
-                                        Color(hex: "#0EA5E9")
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 24)
-                                    .stroke(.white.opacity(0.2), lineWidth: 1)
-                            )
-                            .shadow(color: Color(hex: "#0284FF").opacity(0.3), radius: 20, x: 0, y: 10)
-                    )
-                    .scaleEffect(isAnimating ? 1.0 : 0.95)
+                // The experience opens itself — once per day, driven by the SDK.
+                HStack(spacing: 12) {
+                    Image(systemName: "sparkles")
+                        .font(.title2)
+                        .foregroundStyle(.white)
+
+                    Text("WINR opens itself once per day")
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
                 }
+                .padding(.horizontal, 32)
+                .padding(.vertical, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(.white.opacity(0.08))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 24)
+                                .stroke(.white.opacity(0.2), lineWidth: 1)
+                        )
+                )
                 .scaleEffect(isAnimating ? 1.0 : 0.0)
                 .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(1.0), value: isAnimating)
 
-                // DEMO ONLY: clears the SDK's once-per-day auto-present mark and the
+                // DEMO: clears the SDK's once-per-day auto-present mark and the
                 // unregistered impression counter so the team can re-test the V2
                 // auto-open flow without waiting for tomorrow. Kill + relaunch the
                 // app after tapping — the drawer will auto-present again.
@@ -190,11 +177,6 @@ struct ContentView: View {
             }
             isAnimating = true
         }
-        .alert("WINR SDK Demo", isPresented: $showAlert) {
-            Button("OK") { }
-        } message: {
-            Text("Check console for entry results! 🎉")
-        }
     }
     
     private func resetDemoState() {
@@ -204,25 +186,6 @@ struct ContentView: View {
         defaults.removeObject(forKey: "winr_last_auto_present_\(bundleId)")
         defaults.removeObject(forKey: "winr_unregistered_impressions_\(bundleId)")
         print("🔄 WINR demo state reset — kill and relaunch the app to see auto-open again")
-    }
-
-    private func launchWINR() {
-        // Bridge to UIKit for WINR presentation
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let rootVC = windowScene.windows.first?.rootViewController {
-            WINR.present(from: rootVC) { result in
-                DispatchQueue.main.async {
-                    switch result {
-                    case .success(let grant):
-                        print("🎉 WINR entries claimed: base=\(grant.baseEntries), bonus=\(grant.bonusEntries)")
-                        showAlert = true
-                    case .failure(let error):
-                        print("❌ WINR error: \(error)")
-                        showAlert = true
-                    }
-                }
-            }
-        }
     }
 }
 

@@ -24,7 +24,6 @@
 		7D61F74C2ED6192D0039C063 /* APIRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F74B2ED619270039C063 /* APIRequest.swift */; };
 		7D61F74E2ED619380039C063 /* WINRAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F74D2ED619340039C063 /* WINRAPI.swift */; };
 		7D61F7502ED619440039C063 /* Storage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F74F2ED6193E0039C063 /* Storage.swift */; };
-		7D61F7522ED619810039C063 /* UserDefaultsStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7512ED619800039C063 /* UserDefaultsStorage.swift */; };
 		7D61F7542ED6198A0039C063 /* KeychainStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7532ED619860039C063 /* KeychainStorage.swift */; };
 		7D61F7562ED6199F0039C063 /* AnalyticsAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7552ED6199E0039C063 /* AnalyticsAdapter.swift */; };
 		7D61F75A2ED619B70039C063 /* WINRExperienceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D61F7592ED619B70039C063 /* WINRExperienceViewModel.swift */; };
@@ -112,7 +111,6 @@
 		7D61F74B2ED619270039C063 /* APIRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRequest.swift; sourceTree = "<group>"; };
 		7D61F74D2ED619340039C063 /* WINRAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRAPI.swift; sourceTree = "<group>"; };
 		7D61F74F2ED6193E0039C063 /* Storage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Storage.swift; sourceTree = "<group>"; };
-		7D61F7512ED619800039C063 /* UserDefaultsStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsStorage.swift; sourceTree = "<group>"; };
 		7D61F7532ED619860039C063 /* KeychainStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStorage.swift; sourceTree = "<group>"; };
 		7D61F7552ED6199E0039C063 /* AnalyticsAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsAdapter.swift; sourceTree = "<group>"; };
 		7D61F7592ED619B70039C063 /* WINRExperienceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WINRExperienceViewModel.swift; sourceTree = "<group>"; };
@@ -296,7 +294,6 @@
 			isa = PBXGroup;
 			children = (
 				7D61F7532ED619860039C063 /* KeychainStorage.swift */,
-				7D61F7512ED619800039C063 /* UserDefaultsStorage.swift */,
 				7D61F74F2ED6193E0039C063 /* Storage.swift */,
 			);
 			path = Storage;
@@ -502,7 +499,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7D61F7522ED619810039C063 /* UserDefaultsStorage.swift in Sources */,
 				7D61F7362ED616680039C063 /* WINRError.swift in Sources */,
 				7D61F7382ED616730039C063 /* Giveaway.swift in Sources */,
 				7D61F74C2ED6192D0039C063 /* APIRequest.swift in Sources */,

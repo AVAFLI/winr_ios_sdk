@@ -72,7 +72,7 @@ final class TokenRefreshTests: XCTestCase {
         // Verify the flag pattern exists by checking configuration setup
         let config = WINRConfiguration(
             apiKey: "test",
-            environment: .staging,
+            environment: .production,
             bundleId: "com.test",
             user: WINRUser(id: "u1", firstName: "Test", lastName: "User")
         )

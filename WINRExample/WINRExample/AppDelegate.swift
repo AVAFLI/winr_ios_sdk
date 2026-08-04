@@ -24,7 +24,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // │  publisher dashboard at:                         │
         // │  https://avafli-website.web.app/sdk/dashboard    │
         // │                                                  │
-        // │  Set environment to .production for release.     │
+        // │  environment is production-only.                 │
         // │                                                  │
         // │  Branding is configured server-side:             │
         // │  - Starter plan: white-label set by WINR team    │

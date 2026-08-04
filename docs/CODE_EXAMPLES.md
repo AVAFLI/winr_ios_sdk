@@ -29,39 +29,11 @@ func application(_ application: UIApplication,
 }
 ```
 
-Uses `ConsoleAnalyticsAdapter` (logs to Xcode console) by default. Branding is server-driven — nothing to configure in code.
+Uses `ConsoleAnalyticsAdapter` (logs to Xcode console) by default. Branding is server-driven — nothing to configure in code. The experience is exclusively auto-opened by the SDK; there is no manual launch API.
 
 ---
 
-## 2. Manual Entry Point
-
-Open the experience from your own UI at any time:
-
-```swift
-@IBAction func enterSweepstakesTapped(_ sender: Any) {
-    let presented = WINR.present { result in
-        switch result {
-        case .success(let grant):
-            print("Base: \(grant.baseEntries), Bonus: \(grant.bonusEntries), Total: \(grant.total)")
-        case .failure(let error):
-            print("WINR error: \(error.localizedDescription)")
-        }
-    }
-    if !presented {
-        // SDK not configured, publisher suspended, or user opted out
-    }
-}
-```
-
-Gate your own entry-point UI on availability:
-
-```swift
-enterButton.isHidden = !WINR.isAvailable
-```
-
----
-
-## 3. SwiftUI App Integration
+## 2. SwiftUI App Integration
 
 ```swift
 import SwiftUI
@@ -86,17 +58,11 @@ struct MyApp: App {
 }
 ```
 
-The auto-open flow needs no further wiring. For a manual button in SwiftUI:
-
-```swift
-Button("Enter today's giveaway") {
-    WINR.present()
-}
-```
+The auto-open flow needs no further wiring — the experience opens itself once per day.
 
 ---
 
-## 4. Push Notification Wiring
+## 3. Push Notification Wiring
 
 ```swift
 import WINRSDK
@@ -126,7 +92,7 @@ Apps without Firebase Messaging still get a daily **local** streak reminder as a
 
 ---
 
-## 5. Custom Analytics Adapter
+## 4. Custom Analytics Adapter
 
 ```swift
 import WINRSDK
@@ -155,7 +121,7 @@ See the [event list](API_REFERENCE.md#winranalyticsevent) for everything the SDK
 
 ---
 
-## 6. GDPR / CCPA Flows
+## 5. GDPR / CCPA Flows
 
 Right-to-be-Forgotten (delete all data):
 
@@ -185,12 +151,8 @@ Task {
 
 ---
 
-## 7. Environments
+## 6. Environments
 
 ```swift
-#if DEBUG
-let environment: WINREnvironment = .staging
-#else
-let environment: WINREnvironment = .production
-#endif
+let environment: WINREnvironment = .production  // production-only
 ```

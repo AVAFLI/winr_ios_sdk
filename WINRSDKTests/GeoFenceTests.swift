@@ -13,7 +13,7 @@ final class GeoFenceTests: XCTestCase {
     func testSimplifiedInitialize() {
         let config = WINRConfiguration(
             apiKey: "test_key",
-            environment: .staging,
+            environment: .production,
             bundleId: "com.test.app",
             user: WINRUser(id: "u1", firstName: "Test", lastName: "User")
         )

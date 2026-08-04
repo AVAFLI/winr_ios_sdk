@@ -17,7 +17,7 @@ WINR lets you add daily-entry sweepstakes and prize experiences to your app in u
 - **Streak ladder + milestone accelerators** — Escalating daily entry rewards, with server-configurable milestone bonuses
 - **Winner announcements** — "WE HAVE A WINNER!" banner and winner dialog, driven by the giveaway's `latestWinner`
 - **Visit mode** — A never-resetting streak variant for low-frequency apps
-- **Push reminders** — Drive re-engagement with daily nudges (APNs)
+- **Push reminders** — Drive re-engagement with daily nudges (FCM, with local fallback)
 - **Server-driven branding** — Logo, prize image, and primary color update without app releases
 - **GDPR/CCPA compliant** — Built-in consent flows, RTD opt-out, and user data deletion
 - **Analytics forwarding** — Route SDK events to your existing analytics stack
@@ -40,9 +40,8 @@ let config = WINRConfiguration(
 )
 WINR.configure(config)
 
-// 2. That's it — the experience auto-opens on the first app-open of each day.
-//    You can also open it manually at any time:
-WINR.present()
+// 2. That's it — one call, and the experience opens itself
+//    once per day on the first app-open of the day.
 ```
 
 > **Auto-open:** After `configure(_:)`, the SDK presents the experience automatically once per calendar day (on launch and whenever the app returns to the foreground on a new day). It can be disabled remotely via the dashboard's `experience.autoOpenEnabled` kill switch; unregistered users see at most 3 auto-opens until they submit an email, and RTD opted-out users never see it.
@@ -100,7 +99,7 @@ WINR.configure(config)
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
 | `apiKey` | `String` | ✅ | Your WINR API key from the dashboard |
-| `environment` | `WINREnvironment` | ✅ | `.production`, `.staging`, or `.qa` |
+| `environment` | `WINREnvironment` | ✅ | `.production` (the only environment) |
 | `bundleId` | `String` | ✅ | App bundle ID (e.g., com.example.myapp) |
 | `user` | `WINRUser` | ✅ | The authenticated user |
 | `options` | `WINROptions?` | — | Optional behavior toggles |
@@ -124,28 +123,9 @@ WINR.configure(config)
 
 > **Email:** The SDK captures email through its own opt-in UI. Do not pass email via `WINRUser`.
 
-## Present the Experience
+## The Experience Opens Itself
 
-The V2 experience presents itself automatically once per calendar day (first app-open of the day). Entries are claimed automatically when it opens, and a celebration modal confirms the grant.
-
-You can also launch the bottom-drawer experience manually:
-
-```swift
-let presented = WINR.present { result in
-    switch result {
-    case .success(let grant):
-        print("Base: \(grant.baseEntries), Bonus: \(grant.bonusEntries), Total: \(grant.total)")
-    case .failure(let error):
-        handleError(error)
-    }
-}
-
-if !presented {
-    // SDK not configured, user opted out, or experience unavailable
-}
-```
-
-The callback receives a `DailyEntryGrant` with the entries earned during the session. Use `WINR.present(from: viewController)` to present from a specific view controller, and check `WINR.isAvailable` if you gate your own UI on the experience being available.
+The V2 experience presents itself automatically once per calendar day (first app-open of the day). Entries are claimed automatically when it opens, and a celebration modal confirms the grant. There is no manual launch API — `configure(_:)` is the entire integration, and the SDK handles everything else.
 
 ## Push Notifications
 
@@ -194,9 +174,9 @@ Apps without Firebase Messaging still get engagement nudges: the SDK schedules
 a daily **local** streak reminder as a fallback whenever no FCM token is
 available (or notification permission is denied).
 
-### 3. Upload APNs Certificate
+### 3. Upload Firebase Service Account Key
 
-Upload your APNs certificate or key via the [WINR Dashboard](https://avafli-website.web.app/sdk/dashboard) to enable push notifications. Reminder schedules and messaging are configured server-side from the dashboard.
+Upload your Firebase service account key via the [WINR Dashboard](https://avafli-website.web.app/sdk/dashboard) — server-sent reminders go through your own Firebase project. Reminder schedules and messaging are configured server-side from the dashboard.
 
 ## Customization
 
@@ -232,7 +212,7 @@ let options = WINROptions(
 
 **Events emitted by the SDK** (constants on `WINRAnalyticsEvent`):
 - `winr_registration` — Device/user registered with WINR
-- `winr_experience_opened` — The WINR experience opened (auto-open or manual)
+- `winr_experience_opened` — The WINR experience opened (once-per-day auto-open)
 - `winr_experience_closed` — The WINR experience was dismissed
 - `winr_daily_entry_claimed` — Daily entries awarded (auto-claimed on open)
 - `winr_bonus_entry_claimed` — Bonus entries granted (e.g., streak accelerators)
@@ -264,10 +244,7 @@ For Right-to-Delete opt-outs (user asks to never see WINR again), call `WINR.opt
 
 | Method | Returns | Description |
 | ------ | ------- | ----------- |
-| `WINR.configure(config)` | `Void` | Initialize the SDK; auto-opens the experience once per day |
-| `WINR.present(completion:)` | `Bool` | Manually launch the WINR bottom-drawer experience |
-| `WINR.present(from:completion:)` | `Bool` | Present from a specific view controller |
-| `WINR.isAvailable` | `Bool` | Whether the experience can currently be presented |
+| `WINR.configure(config)` | `Void` | Initialize the SDK; the experience auto-opens once per day |
 | `WINR.optOut()` | `async throws` | RTD opt-out — permanently silence the experience |
 | `WINR.deleteAccount()` | `async throws` | Permanently delete all user data |
 

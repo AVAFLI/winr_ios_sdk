@@ -31,46 +31,7 @@ The primary entry point for the SDK. All methods are static.
 public static func configure(_ configuration: WINRConfiguration)
 ```
 
-The single entry point — call once at app launch. Stores the configuration, sets the logging level, registers the device in the background, and fetches the active giveaway. After registration completes (and on each app foreground), the SDK auto-presents the experience at most once per calendar day. Auto-open can be disabled remotely via the dashboard; unregistered users see at most 3 auto-opens; opted-out users never see it.
-
----
-
-### `present(completion:)`
-
-```swift
-@discardableResult
-public static func present(
-    completion: ((Result<DailyEntryGrant, WINRError>) -> Void)? = nil
-) -> Bool
-```
-
-Manually present the bottom-drawer experience from the topmost view controller (auto-detected by traversing the key window's `presentedViewController` chain).
-
-**Returns:** `false` if the SDK is not configured, the publisher is suspended, the user opted out, or no presenting view controller can be found.
-
----
-
-### `present(from:completion:)`
-
-```swift
-@discardableResult
-public static func present(
-    from presentingViewController: UIViewController,
-    completion: ((Result<DailyEntryGrant, WINRError>) -> Void)? = nil
-) -> Bool
-```
-
-Same as above, presenting from a specific view controller. The completion receives the `DailyEntryGrant` claimed during the session, or a `WINRError` (`.serviceUnavailable` when suspended, `.optedOut` after an RTD opt-out, …).
-
----
-
-### `isAvailable`
-
-```swift
-public static var isAvailable: Bool
-```
-
-Whether the experience can currently be presented — `false` when the SDK is not configured or the publisher's account is suspended / API key revoked. Suspension is only known after device registration completes, so check this asynchronously.
+The single entry point — call once at app launch. Stores the configuration, sets the logging level, registers the device in the background, and fetches the active giveaway. After registration completes (and on each app foreground), the SDK presents the experience automatically at most once per calendar day — this is the only way the experience appears; there is no manual launch API. Auto-open can be disabled remotely via the dashboard; unregistered users see at most 3 auto-opens; opted-out users never see it.
 
 ---
 
@@ -143,7 +104,7 @@ public struct WINRConfiguration {
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `apiKey` | `String` | ✅ | Your WINR API key from the dashboard |
-| `environment` | `WINREnvironment` | ✅ | `.production`, `.staging`, or `.qa` |
+| `environment` | `WINREnvironment` | ✅ | `.production` (the only environment) |
 | `bundleId` | `String` | ✅ | App bundle ID (e.g. `com.example.myapp`) |
 | `user` | `WINRUser` | ✅ | The authenticated user |
 | `options` | `WINROptions` | — | Optional behavior toggles |
@@ -175,10 +136,10 @@ public struct WINROptions {
 ```swift
 public enum WINREnvironment {
     case production
-    case staging
-    case qa
 }
 ```
+
+Production-only — there is no staging or QA backend.
 
 ---
 
@@ -235,7 +196,7 @@ public struct DailyEntryGrant {
 }
 ```
 
-The result delivered by `present`'s completion. `baseEntries` is the daily streak-ladder amount; `bonusEntries` holds milestone / weekly / monthly bonuses granted alongside it.
+The entries granted during an auto-opened session. `baseEntries` is the daily streak-ladder amount; `bonusEntries` holds milestone / weekly / monthly bonuses granted alongside it.
 
 ---
 

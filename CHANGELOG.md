@@ -2,6 +2,15 @@
 
 All notable changes to the WINR SDK will be documented in this file.
 
+## [2.1.0] - 2026-08-04
+
+### Removed (BREAKING)
+- Manual `present()` / `present(from:)` and the public `isAvailable` check — the experience is exclusively auto-opened by the SDK (once per calendar day). `configure(_:)` is the entire integration; publishers can no longer launch the experience manually.
+- `WINREnvironment.staging` and `.qa` — production-only; no staging/QA infrastructure exists (the removed cases silently pointed at production).
+
+### Fixed
+- Docs: push reminders are delivered via FCM (Firebase service account uploaded in the dashboard) with a local-notification fallback — not via an APNs certificate.
+
 ## [2.0.0] - 2026-08-03
 
 ### Added

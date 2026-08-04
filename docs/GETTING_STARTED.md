@@ -72,29 +72,12 @@ That's it. Configuration registers the device in the background and fetches the 
 Auto-open behavior:
 
 - It can be disabled remotely from the dashboard (`experience.autoOpenEnabled`).
-- Unregistered users (no confirmed email) see at most 3 auto-opens, then the SDK goes quiet until they register or you call `present()` manually.
+- Unregistered users (no confirmed email) see at most 3 auto-opens, then the SDK goes quiet until they register.
 - Users who opted out (Right-to-Delete) never see the experience again.
 
+The auto-open is the only way the experience appears — there is no manual launch API. One call, and the experience opens itself once per day.
+
 > **Email:** The SDK captures email through its own opt-in consent UI. Do not pass email via `WINRUser`.
-
----
-
-## Present Manually (Optional)
-
-You can also open the experience at any time — for example from your own menu item:
-
-```swift
-let presented = WINR.present { result in
-    switch result {
-    case .success(let grant):
-        print("Base: \(grant.baseEntries), Bonus: \(grant.bonusEntries), Total: \(grant.total)")
-    case .failure(let error):
-        print("WINR error: \(error)")
-    }
-}
-```
-
-Use `WINR.present(from: viewController)` to present from a specific view controller, and check `WINR.isAvailable` if you gate your own UI on the experience being available.
 
 ---
 

@@ -21,9 +21,9 @@ public enum WINR {
     private static var cachedSDKConfig: SDKConfigResponse?
     private static var isRegistering = false
     /// Set when the backend reports the publisher is suspended / its API key is
-    /// revoked. Cached so repeated `present` calls short-circuit without hitting
-    /// the backend again. Reset on each `configure(_:)` so a re-enabled publisher
-    /// recovers on the next launch.
+    /// revoked. Cached so repeated auto-present attempts short-circuit without
+    /// hitting the backend again. Reset on each `configure(_:)` so a re-enabled
+    /// publisher recovers on the next launch.
     private static var isSuspended = false
     /// Backend truth for whether this person has confirmed email + consent
     /// (drives the unregistered impression cap for auto-present).
@@ -53,30 +53,29 @@ public enum WINR {
         "sha256/YPtHaftLw6/0vnc2BnNKGF54xiCA28WFcccjkA4ypCM=",
     ].map { $0.replacingOccurrences(of: "sha256/", with: "") }
 
-    // MARK: - Public API
+    // MARK: - Availability (internal)
 
-    /// Whether the WINR experience is currently available to present.
+    /// Whether the WINR experience is currently available.
     ///
-    /// Returns `false` when the SDK is not configured, or when the publisher's
-    /// account is suspended / its API key has been revoked. Custom-UI integrations
-    /// can read this (e.g. after configuring) to decide whether to show their
-    /// WINR launch entry point at all. Note that suspension is only known after
-    /// device registration completes, so check this asynchronously (or rely on
-    /// the `.serviceUnavailable` completion error from `present`).
-    public static var isAvailable: Bool {
+    /// `false` when the SDK is not configured, or when the publisher's account
+    /// is suspended / its API key has been revoked. Internal — used by the
+    /// auto-open engine; suspension is only known after device registration
+    /// completes.
+    static var isAvailable: Bool {
         lock.lock(); defer { lock.unlock() }
         return configuration != nil && !isSuspended
     }
 
-    /// Present the WINR experience modally from the top-most view controller.
+    // MARK: - Presentation (internal — driven exclusively by auto-open)
+
+    /// Presents the WINR experience modally from the top-most view controller
+    /// (auto-detected). Internal: the experience is opened only by the SDK's
+    /// once-per-day auto-open engine, never by the host app.
     ///
-    /// This is a convenience overload that auto-detects the top-most view controller.
-    /// Use `present(from:completion:)` if you need to specify the presenting view controller.
-    ///
-    /// Returns `false` if the SDK is not configured, no user is set,
-    /// or no presenting view controller could be found.
+    /// Returns `false` if the SDK is not configured or no presenting view
+    /// controller could be found.
     @discardableResult
-    public static func present(completion: ((Result<DailyEntryGrant, WINRError>) -> Void)? = nil) -> Bool {
+    static func present(completion: ((Result<DailyEntryGrant, WINRError>) -> Void)? = nil) -> Bool {
         guard let vc = topViewController() else {
             completion?(.failure(.noPresentingViewController))
             return false
@@ -174,7 +173,7 @@ public enum WINR {
 
         // Unregistered users (no confirmed email) see the auto-open at most N
         // times (default 3 per the MVP decision), then the SDK goes quiet until
-        // they register or the publisher opens it manually.
+        // they register.
         if emailConsent != true {
             let cap = experience?.unregisteredImpressionCap ?? 3
             let seen = defaults.integer(forKey: unregisteredImpressionsKey)
@@ -220,14 +219,12 @@ public enum WINR {
         Logger.shared.log("User opted out of WINR (RTD) — experience permanently silenced", level: .info)
     }
 
-    /// Present the WINR experience modally from the specified view controller.
+    /// Presents the WINR experience modally from the specified view controller.
+    /// Internal: called only by the SDK's once-per-day auto-open engine.
     ///
-    /// The experience can be opened at any time — users can always view it,
-    /// but can only claim daily entries once per day.
-    ///
-    /// Returns `false` if the SDK is not configured or no user has been set.
+    /// Returns `false` if the SDK is not configured or presentation is suppressed.
     @discardableResult
-    public static func present(
+    static func present(
         from presentingViewController: UIViewController,
         completion: ((Result<DailyEntryGrant, WINRError>) -> Void)? = nil
     ) -> Bool {
@@ -236,9 +233,7 @@ public enum WINR {
             return false
         }
 
-        // If the publisher is suspended, do not present anything. Surface the
-        // error through the completion handler so custom-UI integrations can
-        // react; default-UI integrations simply show nothing.
+        // If the publisher is suspended, do not present anything.
         lock.lock()
         let suspended = isSuspended
         let optedOut = cachedOptedOut
@@ -248,8 +243,7 @@ public enum WINR {
             completion?(.failure(.serviceUnavailable))
             return false
         }
-        // RTD: an opted-out person never sees the experience again — not even via
-        // a manual present() from the host app.
+        // RTD: an opted-out person never sees the experience again.
         if optedOut {
             Logger.shared.log("WINR present suppressed: user opted out (RTD)", level: .info)
             completion?(.failure(.optedOut))
@@ -466,7 +460,7 @@ public enum WINR {
             return response.token
         } catch {
             Logger.shared.log("Token refresh failed: \(error)", level: .error)
-            // Clear stale tokens — next configure() or present() will re-register
+            // Clear stale tokens — the next configure() will re-register
             keychain.deleteAll()
             return nil
         }
@@ -476,10 +470,6 @@ public enum WINR {
         switch environment {
         case .production:
             return URL(string: "https://us-central1-winr-9c11f.cloudfunctions.net")!
-        case .staging:
-            return URL(string: "https://us-central1-winr-staging.cloudfunctions.net")!
-        case .qa:
-            return URL(string: "https://us-central1-winr-qa.cloudfunctions.net")!
         }
     }
 

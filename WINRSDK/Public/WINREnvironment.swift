@@ -10,6 +10,4 @@ import SwiftUI
 
 public enum WINREnvironment {
     case production
-    case staging
-    case qa
 }

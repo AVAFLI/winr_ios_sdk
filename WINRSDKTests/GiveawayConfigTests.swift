@@ -330,8 +330,9 @@ final class GiveawayConfigTests: XCTestCase {
     }
 
     func testWINREnvironmentCases() {
-        let envs: [WINREnvironment] = [.production, .staging, .qa]
-        XCTAssertEqual(envs.count, 3)
+        // Production-only: no staging/qa infrastructure exists.
+        let envs: [WINREnvironment] = [.production]
+        XCTAssertEqual(envs.count, 1)
     }
 
     // MARK: - DeleteUserData
