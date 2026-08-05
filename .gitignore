@@ -1,0 +1,19 @@
+functions/winr-*.json
+WINRExample/WINRExample.xcodeproj/project.xcworkspace/xcuserdata/ryannapolitano.xcuserdatad/UserInterfaceState.xcuserstate
+WINRExample/.DS_Store
+WINRExample/WINRExample.xcodeproj/project.xcworkspace/xcuserdata/ryannapolitano.xcuserdatad/UserInterfaceState.xcuserstate
+WINRExample/WINRExample.xcodeproj/project.xcworkspace/xcuserdata/ryannapolitano.xcuserdatad/UserInterfaceState.xcuserstate
+*.xcuserstate
+WINRExample/WINRExample.xcodeproj/project.xcworkspace/xcuserdata/ryannapolitano.xcuserdatad/UserInterfaceState.xcuserstate
+WINRExample/WINRExample.xcodeproj/project.xcworkspace/xcuserdata/ryannapolitano.xcuserdatad/UserInterfaceState.xcuserstate
+*.xcuserstate
+*.xcuserstate
+*.xcuserstate
+*.xcuserstate
+/WINRExample/WINRExample.xcodeproj/project.xcworkspace/xcuserdata
+.DS_Store
+*.xcuserstate
+
+# SPM build artifacts
+.build/
+.swiftpm/
