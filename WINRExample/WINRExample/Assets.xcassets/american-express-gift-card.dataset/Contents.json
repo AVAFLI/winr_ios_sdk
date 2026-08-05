@@ -1,0 +1,12 @@
+{
+  "data" : [
+    {
+      "filename" : "american-express-gift-card.json",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
