@@ -573,26 +573,15 @@ public enum WINR {
     }
 
     // MARK: - Right-to-be-Forgotten (GDPR/CCPA)
-
-    /// Deletes all user data from the WINR backend and clears local storage.
-    /// Call this when the user requests account deletion.
-    public static func deleteAccount() async throws {
-        guard let configuration = configuration else {
-            throw WINRError.notConfigured
-        }
-
-        let keychain = KeychainStorage()
-        guard keychain.loadToken() != nil else {
-            throw WINRError.authenticationRequired
-        }
-
-        let network = makeNetworkClient(configuration: configuration, keychain: keychain)
-        let _ = try await network.send(DeleteUserDataRequest())
-
-        // Clear all local data
-        keychain.deleteAll()
-        Logger.shared.log("User account deleted (Right-to-be-Forgotten)", level: .info)
-    }
+    //
+    // `deleteAccount()` was REMOVED. It called a backend hard-delete that wiped the
+    // user's entries, leaving no tombstone — so delete -> re-register -> claim again
+    // the same day farmed unlimited entries. It also destroyed the records proving the
+    // drawing was fair, and left prize-claim PII orphaned.
+    //
+    // Use `optOut()` instead. It is the correct erasure: identity-wide, PII scrubbed
+    // everywhere including prize claims, tombstoned so it survives a reinstall, and
+    // the experience stays permanently silenced on the device.
 
     // MARK: - Push Notifications
 

@@ -4,7 +4,7 @@
 [![Platform](https://img.shields.io/badge/platform-iOS%2015.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange.svg)](https://swift.org)
 [![SPM](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://swift.org/package-manager/)
-[![CocoaPods](https://img.shields.io/badge/CocoaPods-2.4.0-red.svg)](https://cocoapods.org/pods/WINRSDK)
+[![CocoaPods](https://img.shields.io/badge/CocoaPods-2.5.0-red.svg)](https://cocoapods.org/pods/WINRSDK)
 
 ---
 
@@ -55,14 +55,14 @@ WINR is distributed via **Swift Package Manager** and **CocoaPods**:
 
 1. **File → Add Package Dependencies…**
 2. Enter the repository URL: `https://github.com/AVAFLI/winr_ios_sdk.git`
-3. Set dependency rule to **Up to Next Major Version** from `2.4.0`
+3. Set dependency rule to **Up to Next Major Version** from `2.5.0`
 4. Add the `WINR` library to your app target
 
 ### Package.swift
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.4.0")
+    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.5.0")
 ]
 ```
 
@@ -238,22 +238,33 @@ let options = WINROptions(
 
 ## GDPR / CCPA
 
-Support deletion requests with `deleteAccount` (Right-to-be-Forgotten):
+Handle erasure requests with `optOut()`:
 
 ```swift
 Task {
     do {
-        try await WINR.deleteAccount()
-        print("User data deleted successfully.")
+        try await WINR.optOut()
+        print("User opted out; data erased.")
     } catch {
-        print("Deletion failed: \(error)")
+        print("Opt-out failed: \(error)")
     }
 }
 ```
 
-This permanently removes all user data, entries, preferences, and consent records from WINR servers.
+This is the complete Right-to-be-Forgotten path. It removes the person's personal
+information everywhere it is held — including prize-claim records, which carry name,
+address and phone — links their devices together so one call covers all of them, and
+permanently silences the experience on the device so it survives a reinstall.
 
-For Right-to-Delete opt-outs (user asks to never see WINR again), call `WINR.optOut()` — it tombstones the person on the backend and permanently silences the experience on the device.
+De-identified entry records are deliberately retained. They are the evidence that a
+drawing was fair and that a prize went to a real eligible person, which a sweepstakes
+operator must be able to show; GDPR Art. 17(3) exempts data needed for legal claims.
+The person is erased, the proof is kept.
+
+> A previous `deleteAccount()` method was removed in 2.5.0. It hard-deleted entry
+> records, which both destroyed that evidence and — because it left no tombstone —
+> allowed delete-and-re-register to farm unlimited entries. Use `optOut()`.
+
 
 ## API Reference
 
@@ -263,7 +274,6 @@ For Right-to-Delete opt-outs (user asks to never see WINR again), call `WINR.opt
 | ------ | ------- | ----------- |
 | `WINR.configure(config)` | `Void` | Initialize the SDK; the experience auto-opens once per day |
 | `WINR.optOut()` | `async throws` | RTD opt-out — permanently silence the experience |
-| `WINR.deleteAccount()` | `async throws` | Permanently delete all user data |
 
 ### Push Notifications
 

@@ -435,50 +435,6 @@ struct MilestoneConfigAPI: Codable {
     let badge: String?
 }
 
-// MARK: - Claim Bonus Entries
-
-struct ClaimBonusEntriesRequest: APIRequest {
-    typealias Response = ClaimBonusEntriesResponse
-
-    let timezone: String = TimeZone.current.identifier
-    let platformOS: String = WINRConstants.platformOS
-    let sdkVersion: String = WINRConstants.sdkVersion
-
-    var path: String { "claimBonusEntries" }
-    var method: String { "POST" }
-    var body: Data? {
-        try? JSONEncoder().encode([
-            "data": [
-                "timezone": timezone,
-                "platformOS": platformOS,
-                "sdkVersion": sdkVersion
-            ]
-        ])
-    }
-}
-
-struct ClaimBonusEntriesResponse: Decodable {
-    let bonusEntries: Int
-    let totalEntries: Int
-}
-
-// MARK: - Delete User Data (Right-to-be-Forgotten)
-
-struct DeleteUserDataRequest: APIRequest {
-    typealias Response = DeleteUserDataResponse
-
-    var path: String { "deleteUserData" }
-    var method: String { "POST" }
-    var body: Data? {
-        try? JSONEncoder().encode(["data": [:] as [String: String]])
-    }
-}
-
-struct DeleteUserDataResponse: Decodable {
-    let success: Bool
-    let deletedEntries: Int
-}
-
 // MARK: - Register Push Token
 
 struct RegisterPushTokenRequest: APIRequest {
