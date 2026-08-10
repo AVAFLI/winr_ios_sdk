@@ -51,10 +51,25 @@ struct WINRPrizeClaimForm {
 
     // MARK: Per-step validity (stepped flow)
 
-    /// Step 1 "TELL US ABOUT YOURSELF": first + last name (email is server-side,
-    /// phone optional).
+    /// Whether the OPTIONAL phone passes: blank is fine; anything typed must
+    /// normalize to a US 10-digit number (leading country "1" allowed).
+    var isPhoneEmptyOrValid: Bool {
+        trimmed(\.phone).isEmpty || normalizedPhone != nil
+    }
+
+    /// The wire value for phone: the bare 10 digits, or nil when blank/invalid.
+    var normalizedPhone: String? {
+        WINRV2FieldValidation.normalizedUSPhone(phone)
+    }
+
+    /// Step 1 "TELL US ABOUT YOURSELF": valid first + last name (unicode
+    /// letters / spaces / apostrophes / hyphens / periods, max 50); phone stays
+    /// OPTIONAL but must be a valid 10-digit US number when present. Email is
+    /// server-side.
     var isStep1Valid: Bool {
-        !trimmed(\.firstName).isEmpty && !trimmed(\.lastName).isEmpty
+        WINRV2FieldValidation.isValidName(firstName)
+            && WINRV2FieldValidation.isValidName(lastName)
+            && isPhoneEmptyOrValid
     }
 
     /// Step 2 "WHERE SHOULD WE SEND YOUR PRIZE?": full US shipping address.

@@ -421,6 +421,13 @@ public enum WINR {
         WINRV2ImageWarmer.prewarm(logoUrl)
     }
 
+    /// @internal — RETRY from the V2 session-expired state: re-runs the device
+    /// registration handshake (token refresh when possible, else a fresh
+    /// registerDevice) so the experience can reload with a live session.
+    static func reregisterDevice(configuration: WINRConfiguration) async {
+        await registerDeviceIfNeeded(configuration: configuration)
+    }
+
     /// @internal — Records that this person has confirmed their email, the
     /// moment a submit succeeds. The flag is otherwise only refreshed by
     /// `getActiveGiveaway`, which can be a whole session away; the auto-present

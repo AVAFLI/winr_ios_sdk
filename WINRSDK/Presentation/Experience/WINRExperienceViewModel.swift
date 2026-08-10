@@ -34,6 +34,15 @@ enum WINRV2CacheRender {
     }
 }
 
+/// A transient, non-blocking notice shown at the top of the dashboard
+/// (duplicate same-day entry, claim transport failure). Never blocks the
+/// dashboard; `showsRetry` adds a "TRY AGAIN" affordance that re-attempts
+/// the daily claim.
+struct WINRV2DashboardNotice: Equatable {
+    let message: String
+    let showsRetry: Bool
+}
+
 final class WINRExperienceViewModel: ObservableObject {
 
     /// Non-PII flag marking that the user completed the email-capture / consent
@@ -138,6 +147,11 @@ final class WINRExperienceViewModel: ObservableObject {
     @Published var isSubmittingEmail = false
     @Published var isVerifyingCode = false
     @Published var codeError: String?
+    /// Inline error on the capture screen when the email submit network call
+    /// failed — the user stays on the capture screen and can retry.
+    @Published var emailSubmitError: String?
+    /// The transient dashboard notice (nil = none showing).
+    @Published var dashboardNotice: WINRV2DashboardNotice?
     /// Consents from the ORIGINAL submit — resend must reuse them (fabricating
     /// values would overwrite the person's real marketing choice). Memory only.
     private var pendingConsents: (age: Bool, marketing: Bool)?
@@ -378,6 +392,22 @@ final class WINRExperienceViewModel: ObservableObject {
                     try? storage.save(true, for: emailSubmittedKey)
                 }
             } catch {
+                // Backend geo-fence rejection: a dedicated state, never the
+                // generic empty state — the person needs to know WHY there is
+                // nothing here (Master Field List "User Message (UI)").
+                if case WINRError.geoBlocked = error {
+                    state = .error(.geoBlocked)
+                    return
+                }
+                // Dead session: the silent token refresh failed for a device
+                // that HAS registered before. Render the session-expired state
+                // (with RETRY) rather than collapsing into the empty state.
+                // An unregistered fresh install still takes the normal
+                // offline/email-capture path below.
+                if case WINRError.authenticationRequired = error, hasRegistered {
+                    state = .error(.authenticationRequired)
+                    return
+                }
                 // Offline fallback: use cached giveaway
                 if activeGiveaway == nil {
                     activeGiveaway = try? storage.load(GiveawayConfig.self, for: giveawayCacheKey)
@@ -587,7 +617,12 @@ final class WINRExperienceViewModel: ObservableObject {
                     container.keychain.saveUUID(uuid)
                     Logger.shared.log("Adoption verified — streak unified across devices", level: .info)
                 }
-                WINR.markEmailConsentGranted()
+                // The inbox is proven and the backend has the email — record
+                // consent now (submitEmail no longer pre-saves the flag).
+                recordEmailConsent(
+                    ageConfirmed: pendingConsents?.age ?? true,
+                    marketingConsent: pendingConsents?.marketing ?? false
+                )
                 await MainActor.run { self.state = .loading }
                 await load(claimBeforeDashboard: true)
             } catch {
@@ -609,20 +644,15 @@ final class WINRExperienceViewModel: ObservableObject {
     func submitEmail(_ email: String, ageConfirmed: Bool, marketingConsent: Bool) {
         guard !email.isEmpty else { return }
 
-        // NOTE: We deliberately do NOT persist the raw email locally (PII-High).
-        // The backend stores it AES-256-encrypted and returns a user_uid handshake;
-        // registration state is derived from user_uid in the Keychain instead.
-        do {
-            try container.storage.save(true, for: emailSubmittedKey)
-            try container.storage.save(marketingConsent, for: "winr_marketing_consent")
-            Logger.shared.log("WINR email submitted (age confirmed: \(ageConfirmed), marketing consent: \(marketingConsent))", level: .info)
-        } catch {
-            Logger.shared.log("Failed to save email-submitted flag: \(error)", level: .error)
-        }
-
         // Submit email to the backend, THEN advance. We await (rather than the old
         // fire-and-forget) because the backend consent gate blocks a claim until the
         // email is on file — advancing first would race into a failed claim.
+        //
+        // The non-PII "email submitted" flag is persisted only AFTER the
+        // backend confirms (see recordEmailConsent). It used to be saved
+        // before the network call, so a failed submit still marked the user
+        // as consented and skipped the capture screen forever after.
+        emailSubmitError = nil
         isSubmittingEmail = true
         Task { [weak self] in
             defer { Task { @MainActor in self?.isSubmittingEmail = false } }
@@ -651,17 +681,25 @@ final class WINRExperienceViewModel: ObservableObject {
                     container.keychain.saveUUID(uuid)
                     Logger.shared.log("Adopted existing account — streak unified across devices", level: .info)
                 }
-                // The facade's cached consent flag is otherwise only refreshed
-                // by getActiveGiveaway, so between this submit and the next
-                // fetch the auto-present engine would still see this person as
-                // unregistered and count them against the unregistered
-                // impression cap. Harmless today (the once-per-day mark is
-                // checked first), but correctness shouldn't depend on that
-                // ordering — the backend has the email now, so record it.
-                WINR.markEmailConsentGranted()
+                // The backend has the email now — persist the non-PII consent
+                // flags and refresh the facade's cached consent (otherwise only
+                // getActiveGiveaway refreshes it, which can be a session away).
+                recordEmailConsent(ageConfirmed: ageConfirmed, marketingConsent: marketingConsent)
                 Logger.shared.log("Email submitted to backend", level: .debug)
             } catch {
-                Logger.shared.log("Email submit to backend failed (will retry later): \(error)", level: .error)
+                Logger.shared.log("Email submit to backend failed: \(error)", level: .error)
+                await MainActor.run {
+                    if case WINRError.geoBlocked = error {
+                        self.state = .error(.geoBlocked)
+                    } else if case WINRError.authenticationRequired = error, self.hasRegistered {
+                        self.state = .error(.authenticationRequired)
+                    } else {
+                        // Keep the user ON the capture screen with an inline
+                        // error and let them retry — never proceed as success.
+                        self.emailSubmitError = WINRV2Strings.emailSubmitFailed
+                    }
+                }
+                return
             }
 
             // Re-load so the (possibly switched) canonical user's authoritative
@@ -670,6 +708,22 @@ final class WINRExperienceViewModel: ObservableObject {
             // mounts already celebrating — never an uncelebrated streak page.
             await load(claimBeforeDashboard: true)
         }
+    }
+
+    /// Persists the non-PII consent flags the moment a submit (or verified
+    /// adoption) actually SUCCEEDS — never before. We deliberately do NOT
+    /// persist the raw email locally (PII-High): the backend stores it
+    /// AES-256-encrypted and returns a user_uid handshake; registration state
+    /// is derived from user_uid in the Keychain instead.
+    private func recordEmailConsent(ageConfirmed: Bool, marketingConsent: Bool) {
+        do {
+            try container.storage.save(true, for: emailSubmittedKey)
+            try container.storage.save(marketingConsent, for: "winr_marketing_consent")
+            Logger.shared.log("WINR email submitted (age confirmed: \(ageConfirmed), marketing consent: \(marketingConsent))", level: .info)
+        } catch {
+            Logger.shared.log("Failed to save email-submitted flag: \(error)", level: .error)
+        }
+        WINR.markEmailConsentGranted()
     }
 
     /// Email path (Day 1): awaited claim BEFORE the dashboard ever mounts. On
@@ -852,89 +906,157 @@ final class WINRExperienceViewModel: ObservableObject {
                 )
             } catch {
                 isClaimingDaily = false
-                let errorMessage = "\(error)"
-                
-                // "Already claimed" means the user already got their entries today.
-                // Treat this as a successful claim — update local state and show completed.
-                if errorMessage.contains("Already claimed") {
-                    Logger.shared.log("Already claimed today — updating local state", level: .info)
+
+                switch Self.claimFailureResolution(for: error, auto: auto, hasRegistered: hasRegistered) {
+                case .alreadyClaimedNotice:
+                    // The backend already holds today's entry (another device
+                    // beat us between the status fetch and the claim) and local
+                    // state didn't know. Sync the claimed state and TELL the
+                    // user — this rejection used to be swallowed silently.
+                    Logger.shared.log("Already claimed today — syncing local state", level: .info)
                     var updatedStreak = streak
                     updatedStreak.lastClaimedDate = Date()
                     try? container.storage.save(updatedStreak, for: streakStorageKey)
                     claimedToday = true
-
-                    // For an auto-claim this isn't news worth celebrating — show the
-                    // dashboard in its claimed state instead of the confirmation.
-                    // "Already claimed" here means another device beat us between the
-                    // status fetch and the claim, so our cached totals are one claim
-                    // behind — re-load to pull the authoritative streak/total.
-                    if auto {
-                        // Roll back the predicted celebration NUMBERS — the
-                        // prediction was built on a stale total. The reveal
-                        // state itself stays (no animation replay); the
-                        // re-load silently corrects the total readout.
-                        pendingRevealGrant = nil
-                        preClaimTotalEntries = nil
-                        state = .streak(updatedStreak, entries, ladder)
-                        // One-shot: never loop if status + claim keep disagreeing.
-                        if !didResyncAfterAlreadyClaimed {
-                            didResyncAfterAlreadyClaimed = true
-                            Task { await load() }
-                        }
-                        return
+                    // Roll back the predicted celebration NUMBERS — the
+                    // prediction was built on a stale total. The reveal state
+                    // itself stays (no animation replay); the re-load silently
+                    // corrects the total readout.
+                    pendingRevealGrant = nil
+                    preClaimTotalEntries = nil
+                    state = .streak(updatedStreak, entries, ladder)
+                    showDashboardNotice(WINRV2Strings.alreadyEnteredToday, showsRetry: false)
+                    // Cached totals are one claim behind — re-load to pull the
+                    // authoritative streak/total. One-shot: never loop if
+                    // status + claim keep disagreeing.
+                    if !didResyncAfterAlreadyClaimed {
+                        didResyncAfterAlreadyClaimed = true
+                        Task { await load() }
                     }
-                    let grant = DailyEntryGrant(baseEntries: entries)
-                    let estimatedTotal = streak.totalEntriesEarned + entries
-                    state = .dailyConfirmed(grant, totalEntries: estimatedTotal)
-                    return
-                }
 
-                // Auto-claim failures are SILENT by design: the dashboard simply
-                // shows the unclaimed state and the user can retry by tapping.
-                // Never fake a local success for an auto-claim.
-                if auto {
+                case .geoBlocked:
+                    // Dedicated "Not available in your location" state.
+                    state = .error(.geoBlocked)
+
+                case .sessionExpired:
+                    // Dead session (silent refresh failed) — dedicated state
+                    // with RETRY, never the generic empty state.
+                    state = .error(.authenticationRequired)
+
+                case .silentUnclaimed:
+                    // Auto-claim backend rejection (consent, opt-out…): the
+                    // dashboard simply shows the calm unclaimed state.
                     Logger.shared.log("Auto-claim declined: \(error)", level: .info)
                     claimedToday = false
-                    // Roll back the predicted celebration — nothing was granted.
-                    // The dashboard returns to the calm unclaimed state and the
-                    // total readout reverts silently (no animation replay).
                     pendingRevealGrant = nil
                     preClaimTotalEntries = nil
                     claimRevealed = false
                     state = .streak(streak, entries, ladder)
-                    return
+
+                case .surfaceError:
+                    // Manual claim, backend REJECTION: surface the error state.
+                    // The V2 router renders every non-geo/non-session error as
+                    // the friendly empty state — raw backend text is never
+                    // shown to users.
+                    state = .error((error as? WINRError) ?? .internalError("\(error)"))
+
+                case .connectionNotice:
+                    // Transport failure. HONEST failure handling (2.6.0): no
+                    // fabricated local success, no celebration for an entry
+                    // that does not exist. The dashboard shows the unclaimed
+                    // state with a non-blocking notice and a retry affordance.
+                    Logger.shared.log("Claim transport failure — showing retry notice: \(error)", level: .error)
+                    claimedToday = false
+                    pendingRevealGrant = nil
+                    preClaimTotalEntries = nil
+                    claimRevealed = false
+                    state = .streak(streak, entries, ladder)
+                    showDashboardNotice(WINRV2Strings.claimNotRecorded, showsRetry: true)
                 }
-
-                // Manual claim, backend REJECTION (geo-block, consent, opt-out…):
-                // surface the real error. Faking a local "claimed" here would show a
-                // celebration for an entry that does not exist.
-                if case WINRError.internalError = error {
-                    state = .error((error as? WINRError) ?? .internalError(errorMessage))
-                    return
-                }
-
-                // True transport failure — offline fallback: use local streak engine
-                Logger.shared.log("Backend claim failed, using local: \(error)", level: .error)
-
-                // Persist the claim locally so it can't be re-claimed
-                var updatedStreak = streak
-                updatedStreak.lastClaimedDate = Date()
-                try? container.storage.save(updatedStreak, for: streakStorageKey)
-                claimedToday = true
-
-                let grant = DailyEntryGrant(baseEntries: entries)
-                let estimatedTotal = streak.totalEntriesEarned + entries
-                state = .dailyConfirmed(grant, totalEntries: estimatedTotal)
-
-                container.analytics?.track(
-                    event: WINRAnalyticsEvent.dailyEntryClaimed,
-                    properties: [
-                        "day": streak.currentDay,
-                        "entries": grant.baseEntries,
-                        "offline": true
-                    ]
-                )
             }
+        }
+    }
+
+    // MARK: - Claim failure policy
+
+    /// How a failed daily claim resolves, split out as a pure decision so the
+    /// policy is unit-testable. There is deliberately NO resolution that
+    /// fabricates a local success — a transport failure used to fake a claimed
+    /// state and celebrate an entry that was never recorded.
+    enum ClaimFailureResolution: Equatable {
+        /// Backend says today's entry already exists and local state didn't
+        /// know → claimed dashboard + transient "already entered" notice.
+        case alreadyClaimedNotice
+        /// Backend geo-fence rejection → dedicated geo-blocked state.
+        case geoBlocked
+        /// Dead session (token refresh failed) → dedicated retry state.
+        case sessionExpired
+        /// Auto-claim backend rejection → calm unclaimed dashboard, no copy.
+        case silentUnclaimed
+        /// Manual-claim backend rejection → error state (rendered as the
+        /// friendly empty state; raw error text never reaches the user).
+        case surfaceError
+        /// Transport failure → honest unclaimed dashboard + connection notice
+        /// with a retry affordance.
+        case connectionNotice
+    }
+
+    static func claimFailureResolution(for error: Error, auto: Bool, hasRegistered: Bool) -> ClaimFailureResolution {
+        if "\(error)".contains("Already claimed") { return .alreadyClaimedNotice }
+        guard let winrError = error as? WINRError else {
+            // URLError and friends — the request never completed.
+            return .connectionNotice
+        }
+        switch winrError {
+        case .geoBlocked:
+            return .geoBlocked
+        case .authenticationRequired where hasRegistered:
+            return .sessionExpired
+        case .network:
+            return .connectionNotice
+        default:
+            // Any other backend/SDK rejection (consent, opt-out, suspension…).
+            return auto ? .silentUnclaimed : .surfaceError
+        }
+    }
+
+    // MARK: - Dashboard notices
+
+    /// Shows a transient dashboard notice. Informational notices auto-dismiss
+    /// after a few seconds; retry notices persist until acted on or dismissed.
+    @MainActor
+    private func showDashboardNotice(_ message: String, showsRetry: Bool) {
+        let notice = WINRV2DashboardNotice(message: message, showsRetry: showsRetry)
+        dashboardNotice = notice
+        if !showsRetry {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 6) { [weak self] in
+                guard let self, self.dashboardNotice == notice else { return }
+                self.dashboardNotice = nil
+            }
+        }
+    }
+
+    /// TRY AGAIN on the connection notice — re-attempts the daily claim.
+    @MainActor
+    func retryDailyClaim() {
+        dashboardNotice = nil
+        claimDailyEntries(auto: true)
+    }
+
+    @MainActor
+    func dismissDashboardNotice() {
+        dashboardNotice = nil
+    }
+
+    /// RETRY on the session-expired state: run the registration handshake
+    /// again (refresh if possible, else a fresh register) and reload.
+    @MainActor
+    func retryAfterSessionExpiry() {
+        state = .loading
+        Task { [weak self] in
+            guard let self else { return }
+            await WINR.reregisterDevice(configuration: container.configuration)
+            await load()
         }
     }
 
@@ -1002,7 +1124,9 @@ final class WINRExperienceViewModel: ObservableObject {
                     giveawayId: claim.giveawayId,
                     firstName: form.trimmed(\.firstName),
                     lastName: form.trimmed(\.lastName),
-                    phone: form.trimmed(\.phone).isEmpty ? nil : form.trimmed(\.phone),
+                    // Wire format: the bare 10 digits (or nil when blank) —
+                    // isValid already guarantees blank-or-normalizable.
+                    phone: form.normalizedPhone,
                     street: form.trimmed(\.street),
                     apt: form.trimmed(\.apt).isEmpty ? nil : form.trimmed(\.apt),
                     city: form.trimmed(\.city),

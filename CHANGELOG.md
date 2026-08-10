@@ -1,5 +1,42 @@
 # Changelog
 
+## 2.6.0 — 2026-08-10
+
+User-facing error messaging per the Master Field List; honest failure states —
+no fabricated claim success.
+
+- **Inline field validation** with mandated copy, centralized in
+  `WINRV2Strings`:
+  - Email capture: "Please enter a valid email address." under the field,
+    shown only after the field is touched or a submit attempt — never while
+    typing the first characters.
+  - Winner claim step 1: "Please enter a valid first name." / "Please enter a
+    valid last name." on a continue attempt (unicode letters, spaces,
+    apostrophes, hyphens, periods; max 50).
+  - Claim phone stays optional, but a non-blank value must be a valid US
+    10-digit number ("Please enter a valid 10-digit mobile number."); the
+    normalized 10 digits are what gets submitted.
+- **No fabricated claim success** — a transport failure during the daily claim
+  no longer fakes a local success and celebrates an entry that was never
+  recorded. The dashboard shows the honest unclaimed state with "We couldn't
+  record today's entry. Check your connection and try again." and a TRY AGAIN
+  affordance.
+- **Duplicate same-day entry** (claim rejected as already-claimed when local
+  state didn't know, e.g. another device claimed first) now shows a transient
+  dashboard notice: "You've already entered today. Come back tomorrow to keep
+  your streak going!"
+- **Geo-blocked** backend rejections render a dedicated "Not available in your
+  location" state instead of the generic empty state.
+- **Session expired** (silent token refresh failed) renders "Your session has
+  expired. Please try again." with a RETRY button that re-registers and
+  reloads — no longer collapsed into the empty state.
+- **Failed email submits stay on the capture screen** with "Something went
+  wrong sending your email. Please try again." and a retry; consent is now
+  recorded only after a confirmed submit (previously it was persisted before
+  the network call, so a failed submit skipped the capture screen forever).
+- Raw `WINRError`/backend error text is never rendered to users; all other
+  errors keep the friendly empty state.
+
 ## 2.5.1 — 2026-08-10
 
 Consent correctness and cross-device security.

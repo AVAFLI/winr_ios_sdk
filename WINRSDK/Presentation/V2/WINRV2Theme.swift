@@ -29,6 +29,8 @@ enum WINRV2Color {
     static let textSecondary = Color.white.opacity(0.75)
     static let textTertiary = Color.white.opacity(0.6)
     static let foregroundSecondary = Color.white.opacity(0.5)
+    /// Inline validation / error text (the code-entry error red).
+    static let errorRed = Color(red: 1, green: 0.42, blue: 0.39)
 }
 
 /// The publisher's primary color (branding.primaryColor) with the WINR-blue default.

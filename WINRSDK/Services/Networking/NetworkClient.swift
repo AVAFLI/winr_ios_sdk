@@ -281,6 +281,13 @@ final class URLSessionNetworkClient: NetworkClient {
                 if Self.isSuspendedError(message: body) {
                     return .failure(WINRError.serviceUnavailable)
                 }
+                // The geo-fence rejection is a `permission-denied` callable
+                // error (HTTP 403) — it is NOT an auth failure, so map it
+                // before falling through to authenticationRequired (which
+                // would pointlessly burn a token refresh).
+                if Self.isGeoBlockedError(message: body) {
+                    return .failure(WINRError.geoBlocked)
+                }
                 return .failure(WINRError.authenticationRequired)
             }
             if !(200...299).contains(httpResponse.statusCode) {
@@ -289,6 +296,9 @@ final class URLSessionNetworkClient: NetworkClient {
                 if let errorBody = try? JSONDecoder().decode(CallableErrorResponse.self, from: data) {
                     if Self.isSuspendedError(message: errorBody.error.message) {
                         return .failure(WINRError.serviceUnavailable)
+                    }
+                    if Self.isGeoBlockedError(message: errorBody.error.message) {
+                        return .failure(WINRError.geoBlocked)
                     }
                     return .failure(WINRError.internalError(errorBody.error.message))
                 }
@@ -315,6 +325,21 @@ final class URLSessionNetworkClient: NetworkClient {
     static func isSuspendedError(message: String) -> Bool {
         let lowered = message.lowercased()
         return lowered.contains("suspended") || lowered.contains("revoked")
+    }
+
+    /// Detects the backend geo-fence rejection from its message. gatekeeper.ts
+    /// (`enforceGeoFence`) throws a `permission-denied` callable error with one
+    /// of two messages:
+    ///   - GEO_UNVERIFIED_MESSAGE: "We couldn't verify your location. This
+    ///     promotion is only available in the United States."
+    ///   - GEO_NON_US_MESSAGE: "This promotion is only available to users
+    ///     located in one of the 50 United States or Washington, D.C."
+    /// Both contain "promotion is only available"; the "verify your location"
+    /// clause is matched too so the unverified variant survives copy drift.
+    static func isGeoBlockedError(message: String) -> Bool {
+        let lowered = message.lowercased()
+        return lowered.contains("promotion is only available")
+            || lowered.contains("verify your location")
     }
 }
 

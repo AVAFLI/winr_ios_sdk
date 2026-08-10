@@ -73,9 +73,22 @@ struct WINRV2ExperienceRoot: View {
             switch viewModel.state {
             case .loading:
                 WINRV2LoadingView()
-            case .noActiveGiveaway, .error:
-                // Nothing to pitch (or opted out / errored) — quiet empty state.
+            case .noActiveGiveaway:
+                // Nothing to pitch (or opted out) — quiet empty state.
                 emptyState
+            case let .error(error):
+                // Geo-block and dead-session get DEDICATED states (Master
+                // Field List "User Message (UI)"); every other error keeps the
+                // friendly empty state — raw WINRError/backend text is never
+                // rendered to users.
+                switch error {
+                case .geoBlocked:
+                    geoBlockedState
+                case .authenticationRequired:
+                    sessionExpiredState
+                default:
+                    emptyState
+                }
             case let .codeEntry(email):
                 WINRV2CodeEntryView(
                     accent: accent,
@@ -102,6 +115,7 @@ struct WINRV2ExperienceRoot: View {
                     marketingConsentText: viewModel.sdkConfig?.copy?.emailCapture?.emailConsentText
                         ?? viewModel.sdkConfig?.copy?.emailConsentText,
                     prefilledEmail: viewModel.prefilledEmail,
+                    submitError: viewModel.emailSubmitError,
                     onSubmit: { email, ageConfirmed, marketingConsent in
                         viewModel.submitEmail(email, ageConfirmed: ageConfirmed, marketingConsent: marketingConsent)
                     },
@@ -196,21 +210,86 @@ struct WINRV2ExperienceRoot: View {
                 )
             }
         }
+        .overlay(alignment: .top) {
+            // Transient dashboard notice (duplicate same-day entry, claim
+            // transport failure). Non-blocking: floats over the dashboard,
+            // which stays fully interactive beneath it.
+            if let notice = viewModel.dashboardNotice, case .streak = viewModel.state {
+                WINRV2NoticeBanner(
+                    message: notice.message,
+                    retryTitle: notice.showsRetry ? WINRV2Strings.retryAction : nil,
+                    onRetry: { viewModel.retryDailyClaim() },
+                    onDismiss: { viewModel.dismissDashboardNotice() }
+                )
+                .padding(.horizontal, 20)
+                .padding(.top, 68)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: viewModel.dashboardNotice)
     }
 
     private var emptyState: some View {
         VStack(spacing: 12) {
-            Text("Nothing to see here yet")
+            Text(WINRV2Strings.emptyHeadline)
                 .font(WINRV2Font.inter(20, .bold))
                 .foregroundColor(.white)
-            Text("Check back soon for your next chance to win!")
+            Text(WINRV2Strings.emptyBody)
                 .font(WINRV2Font.inter(14))
                 .foregroundColor(WINRV2Color.textTertiary)
-            WINRV2PillButton(accent: WINRV2Color.winrBlue, title: "CLOSE") {
+            WINRV2PillButton(accent: WINRV2Color.winrBlue, title: WINRV2Strings.close) {
                 viewModel.requestDismiss()
             }
             .frame(width: 220)
             .padding(.top, 12)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// Backend geo-fence rejection — the person needs to know WHY there is
+    /// nothing here, not a generic "check back soon".
+    private var geoBlockedState: some View {
+        VStack(spacing: 12) {
+            Text(WINRV2Strings.geoBlockedHeadline)
+                .font(WINRV2Font.inter(20, .bold))
+                .foregroundColor(.white)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 30)
+            Text(WINRV2Strings.geoBlockedBody)
+                .font(WINRV2Font.inter(14))
+                .foregroundColor(WINRV2Color.textTertiary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 34)
+            WINRV2PillButton(accent: WINRV2Color.winrBlue, title: WINRV2Strings.close) {
+                viewModel.requestDismiss()
+            }
+            .frame(width: 220)
+            .padding(.top, 12)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// Silent token refresh failed — a dead session, not an empty catalogue.
+    /// RETRY re-runs the registration handshake and reloads.
+    private var sessionExpiredState: some View {
+        VStack(spacing: 12) {
+            Text(WINRV2Strings.sessionExpired)
+                .font(WINRV2Font.inter(20, .bold))
+                .foregroundColor(.white)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 34)
+            WINRV2PillButton(accent: WINRV2Color.winrBlue, title: WINRV2Strings.sessionExpiredRetry) {
+                viewModel.retryAfterSessionExpiry()
+            }
+            .frame(width: 220)
+            .padding(.top, 12)
+            Button(action: { viewModel.requestDismiss() }) {
+                Text(WINRV2Strings.closeLowercase)
+                    .font(WINRV2Font.inter(14))
+                    .foregroundColor(WINRV2Color.textTertiary)
+                    .underline()
+            }
+            .buttonStyle(.plain)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -326,12 +405,20 @@ struct WINRV2CaptureView: View {
     /// devices by email, so a free-typed address lets a user attach themselves to
     /// someone else's record. Malformed or nil → the editable field, unchanged.
     let prefilledEmail: String?
+    /// Inline submit-failure copy from the view model (a failed network submit
+    /// keeps the user here with this error and lets them retry).
+    var submitError: String? = nil
     /// (email, ageConfirmed, marketingConsent)
     let onSubmit: (String, Bool, Bool) -> Void
     let onInfo: () -> Void
     let onClose: () -> Void
 
     @State private var email = ""
+    /// Set once editing has ended (or the keyboard's go/return was tapped) so
+    /// the inline invalid-email error never fires while the user is typing
+    /// their first characters.
+    @State private var emailTouched = false
+    @FocusState private var emailFocused: Bool
     /// Unchecked by default — the age gate requires an affirmative action.
     @State private var isAdult = false
     /// Marketing opt-in. This governs ONLY the publisher marketing to this
@@ -353,8 +440,24 @@ struct WINRV2CaptureView: View {
     }
 
     private var day1Entries: Int { giveaway?.streakLadder.first ?? 10 }
+    private var typedEmail: String {
+        email.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
     private var canSubmit: Bool {
-        isAdult && (lockedEmail != nil || (email.contains("@") && email.contains(".")))
+        isAdult && (lockedEmail != nil || WINRV2FieldValidation.isValidEmail(typedEmail))
+    }
+
+    /// The inline error under the email field: a failed submit's message wins;
+    /// otherwise the invalid-email error, shown only once the field has been
+    /// touched (editing ended with a non-empty value) — never while the user
+    /// is typing their first characters.
+    private var emailError: String? {
+        if let submitError { return submitError }
+        guard lockedEmail == nil else { return nil }
+        if emailTouched, !typedEmail.isEmpty, !WINRV2FieldValidation.isValidEmail(typedEmail) {
+            return WINRV2Strings.invalidEmail
+        }
+        return nil
     }
 
     var body: some View {
@@ -381,7 +484,18 @@ struct WINRV2CaptureView: View {
                     prizeStrip
 
                     VStack(spacing: 14) {
-                        emailField
+                        VStack(alignment: .leading, spacing: 6) {
+                            emailField
+                            if let emailError {
+                                Text(emailError)
+                                    .font(WINRV2Font.inter(13))
+                                    .foregroundColor(WINRV2Color.errorRed)
+                                    .multilineTextAlignment(.leading)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .padding(.leading, 4)
+                                    .transition(.opacity)
+                            }
+                        }
 
                         checkbox("I confirm I am 18 years of age or older", isOn: isAdult) {
                             isAdult.toggle()
@@ -488,6 +602,14 @@ struct WINRV2CaptureView: View {
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                    .focused($emailFocused)
+                    .submitLabel(.go)
+                    .onSubmit { emailTouched = true }
+                    .onChange(of: emailFocused) { focused in
+                        // Editing ended with something typed → the field is
+                        // "touched" and the inline error may show.
+                        if !focused, !typedEmail.isEmpty { emailTouched = true }
+                    }
             }
         }
         .padding(.horizontal, 20)
@@ -746,7 +868,7 @@ struct WINRV2CodeEntryView: View {
                         if let errorText {
                             Text(errorText)
                                 .font(WINRV2Font.inter(13))
-                                .foregroundColor(Color(red: 1, green: 0.42, blue: 0.39))
+                                .foregroundColor(WINRV2Color.errorRed)
                                 .multilineTextAlignment(.center)
                         }
 

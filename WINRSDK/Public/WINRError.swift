@@ -26,6 +26,10 @@ public enum WINRError: Error {
     /// The user has exercised their right to delete (RTD) and opted out of WINR.
     /// The experience must never be presented to them again.
     case optedOut
+    /// The backend geo-fence rejected the request (non-US or unverifiable
+    /// location). The V2 experience renders a dedicated "Not available in
+    /// your location" state for this case.
+    case geoBlocked
     case internalError(String)
 }
 
@@ -56,6 +60,8 @@ extension WINRError: LocalizedError {
             return "This experience is currently unavailable."
         case .optedOut:
             return "This user has opted out of WINR."
+        case .geoBlocked:
+            return "This promotion is not available in the user's location."
         case .internalError(let message):
             return message
         }

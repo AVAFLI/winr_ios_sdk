@@ -69,6 +69,9 @@ struct WINRClaimStepField: View {
     @Binding var text: String
     var keyboard: UIKeyboardType = .default
     var contentType: UITextContentType? = nil
+    /// Inline validation error rendered under the field (nil = none). Copy
+    /// comes from WINRV2Strings; shown by the steps on a continue attempt.
+    var error: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -82,6 +85,19 @@ struct WINRClaimStepField: View {
                 .padding(.horizontal, 25)
                 .frame(height: 59)
                 .background(WINRClaimStepTheme.fieldBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(WINRV2Color.errorRed.opacity(error == nil ? 0 : 0.8), lineWidth: 1)
+                )
+            if let error {
+                Text(error)
+                    .font(WINRV2Font.inter(13))
+                    .foregroundColor(WINRV2Color.errorRed)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, 8)
+                    .transition(.opacity)
+            }
         }
     }
 }

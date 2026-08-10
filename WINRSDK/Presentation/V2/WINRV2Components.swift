@@ -637,6 +637,60 @@ struct WINRV2ComeBackBar: View {
     }
 }
 
+// MARK: - Transient notice banner
+
+/// A transient, non-blocking dashboard notice: informational copy plus an
+/// optional retry action ("TRY AGAIN") and a dismiss X. Floated over the top
+/// of the dashboard by the experience root.
+struct WINRV2NoticeBanner: View {
+    let message: String
+    var retryTitle: String? = nil
+    var onRetry: () -> Void = {}
+    var onDismiss: () -> Void = {}
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(message)
+                    .font(WINRV2Font.inter(13, .medium))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let retryTitle {
+                    Button(action: onRetry) {
+                        Text(retryTitle)
+                            .font(WINRV2Font.inter(13, .bold))
+                            .foregroundColor(Color(red: 0.5, green: 0.69, blue: 1.0))
+                            .underline()
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            Spacer(minLength: 0)
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.white.opacity(0.6))
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Dismiss")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(WINRV2Color.deepCharcoal)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.35), radius: 12, y: 4)
+        )
+    }
+}
+
 // MARK: - CTA + legal
 
 struct WINRV2PillButton: View {
