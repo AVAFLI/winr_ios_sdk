@@ -64,6 +64,19 @@ final class KeychainStorage {
         return String(data: data, encoding: .utf8)
     }
 
+    /// Stable per-install guest identity, minted on first use. Survives app
+    /// relaunches (Keychain) so a guest's attribution doesn't churn per session;
+    /// deliberately NOT synced to iCloud (same protection class as the UUID).
+    func loadOrCreateGuestId() -> String {
+        if let data = load(forKey: "winr_guest_id"),
+           let existing = String(data: data, encoding: .utf8) {
+            return existing
+        }
+        let fresh = "winr_guest_" + UUID().uuidString.lowercased()
+        save(data: Data(fresh.utf8), forKey: "winr_guest_id")
+        return fresh
+    }
+
     func deleteToken() {
         delete(forKey: "winr_auth_token")
         delete(forKey: "winr_refresh_token")

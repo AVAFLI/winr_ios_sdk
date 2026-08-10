@@ -55,6 +55,9 @@ final class WINRExperienceViewModel: ObservableObject {
         case loading
         case noActiveGiveaway
         case emailCapture
+        /// Verified adoption: the typed email matches an existing account; the
+        /// merge waits on the 6-digit code sent to that inbox.
+        case codeEntry(email: String)
         case streak(StreakState, Int, [Int])
         case milestoneCelebration(MilestoneAward, DailyEntryGrant)
         /// Daily entries confirmation screen
@@ -133,6 +136,15 @@ final class WINRExperienceViewModel: ObservableObject {
     // MARK: - V2 display accessors
 
     @Published var isSubmittingEmail = false
+    @Published var isVerifyingCode = false
+    @Published var codeError: String?
+    /// Consents from the ORIGINAL submit — resend must reuse them (fabricating
+    /// values would overwrite the person's real marketing choice). Memory only.
+    private var pendingConsents: (age: Bool, marketing: Bool)?
+
+    /// Partner-authenticated email from WINRUser, for the capture screen's
+    /// read-only pre-fill. Nil when the publisher didn't supply one.
+    var prefilledEmail: String? { container.user.email }
 
     // MARK: - V2 reveal flow (all days — Day 1 unified with Day 2+)
     //
@@ -558,6 +570,42 @@ final class WINRExperienceViewModel: ObservableObject {
     // MARK: - Email capture
 
     @MainActor
+    /// Check the 6-digit adoption code; approved → adopt the canonical user's
+    /// credentials and reload into the dashboard (same as a direct adoption).
+    func submitVerificationCode(_ code: String) {
+        guard !isVerifyingCode else { return }
+        isVerifyingCode = true
+        codeError = nil
+        Task { [weak self] in
+            guard let self else { return }
+            defer { Task { @MainActor in self.isVerifyingCode = false } }
+            do {
+                let response = try await container.network.send(VerifyAdoptionCodeRequest(code: code))
+                if response.adopted == true, let token = response.token, let uuid = response.uuid {
+                    container.keychain.saveToken(token)
+                    if let refresh = response.refreshToken { container.keychain.saveRefreshToken(refresh) }
+                    container.keychain.saveUUID(uuid)
+                    Logger.shared.log("Adoption verified — streak unified across devices", level: .info)
+                }
+                WINR.markEmailConsentGranted()
+                await MainActor.run { self.state = .loading }
+                await load(claimBeforeDashboard: true)
+            } catch {
+                Logger.shared.log("Adoption code check failed: \(error)", level: .error)
+                await MainActor.run {
+                    self.codeError = "That code didn't match. Check the email and try again."
+                }
+            }
+        }
+    }
+
+    /// Request a fresh code by re-submitting the ORIGINAL email + consents.
+    func resendVerificationCode() {
+        guard case let .codeEntry(email) = state, let consents = pendingConsents else { return }
+        state = .emailCapture
+        submitEmail(email, ageConfirmed: consents.age, marketingConsent: consents.marketing)
+    }
+
     func submitEmail(_ email: String, ageConfirmed: Bool, marketingConsent: Bool) {
         guard !email.isEmpty else { return }
 
@@ -587,6 +635,16 @@ final class WINRExperienceViewModel: ObservableObject {
                 // an existing user under this publisher (another device/SDK), the
                 // backend hands back that canonical user's credentials. Switch to
                 // them so the person keeps ONE streak per publisher across devices.
+                if response.verificationRequired == true {
+                    // The merge is parked until the person proves the inbox is
+                    // theirs. Raw email stays in view-model state only.
+                    await MainActor.run {
+                        self.pendingConsents = (ageConfirmed, marketingConsent)
+                        self.codeError = nil
+                        self.state = .codeEntry(email: email)
+                    }
+                    return
+                }
                 if response.adopted == true, let token = response.token, let uuid = response.uuid {
                     container.keychain.saveToken(token)
                     if let refresh = response.refreshToken { container.keychain.saveRefreshToken(refresh) }

@@ -116,7 +116,12 @@ public enum WINR {
         WINRV2Font.registerIfNeeded()
         Logger.shared.level = configuration.options.logging
         Logger.shared.log("WINRSDK configured for \(configuration.environment)")
-        Logger.shared.log("WINR user set: \(configuration.user.id)", level: .debug)
+        Logger.shared.log(
+            configuration.user.isGuest
+                ? "WINR user set: guest session (stable guest id will be minted)"
+                : "WINR user set: \(configuration.user.id)",
+            level: .debug
+        )
 
         // Register device in background, then attempt the once-a-day auto-present.
         registrationTask = Task {
@@ -538,13 +543,19 @@ public enum WINR {
         let network = makeNetworkClient(configuration: configuration, keychain: keychain)
 
         do {
+            // Guest sessions get the SDK-minted stable id, so attribution always
+            // carries a real identifier and never a publisher-fabricated one.
+            // When the publisher later re-configures with a signed-in user, the
+            // same call path overwrites pub_user_id with the real id — the WINR
+            // account itself is device-anchored and unaffected.
+            let effectiveId = user.isGuest ? keychain.loadOrCreateGuestId() : user.id
             let request = SubmitUserProfileRequest(
                 firstName: user.firstName,
                 lastName: user.lastName,
                 phone: user.phone,
                 smsConsent: false,
                 maidId: maidId,
-                publisherUserId: user.id
+                publisherUserId: effectiveId
             )
             let _ = try await network.send(request)
             Logger.shared.log("User profile submitted successfully", level: .debug)

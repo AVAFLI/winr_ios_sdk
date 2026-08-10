@@ -340,9 +340,24 @@ struct SubmitEmailResponse: Decodable {
     /// the person across devices. If `adopted` is true, switch to these
     /// credentials. Absent on a normal first-time submit.
     let adopted: Bool?
+    /// The typed email matches an EXISTING account and the OTP gate is on: no
+    /// merge happened. Show the 6-digit code screen and call verifyAdoptionCode.
+    let verificationRequired: Bool?
     let uuid: String?
     let token: String?
     let refreshToken: String?
+}
+
+/// Completes a verification-gated adoption with the emailed 6-digit code.
+/// The response is the same shape as an adopted SubmitEmailResponse.
+struct VerifyAdoptionCodeRequest: APIRequest {
+    typealias Response = SubmitEmailResponse
+    let code: String
+    var path: String { "verifyAdoptionCode" }
+    var method: String { "POST" }
+    var body: Data? {
+        try? JSONSerialization.data(withJSONObject: ["data": ["code": code]])
+    }
 }
 
 // MARK: - Submit User Profile

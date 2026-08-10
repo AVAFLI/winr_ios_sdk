@@ -76,6 +76,19 @@ struct WINRV2ExperienceRoot: View {
             case .noActiveGiveaway, .error:
                 // Nothing to pitch (or opted out / errored) — quiet empty state.
                 emptyState
+            case let .codeEntry(email):
+                WINRV2CodeEntryView(
+                    accent: accent,
+                    logoUrl: logoUrl,
+                    rulesUrl: rulesUrl,
+                    email: email,
+                    isVerifying: viewModel.isVerifyingCode,
+                    errorText: viewModel.codeError,
+                    onSubmit: { viewModel.submitVerificationCode($0) },
+                    onResend: { viewModel.resendVerificationCode() },
+                    onInfo: { viewModel.showHowItWorks() },
+                    onClose: { viewModel.requestDismiss() }
+                )
             case .emailCapture:
                 WINRV2CaptureView(
                     accent: accent,
@@ -88,6 +101,7 @@ struct WINRV2ExperienceRoot: View {
                     // marketing-consent copy, publisher-named by the backend.
                     marketingConsentText: viewModel.sdkConfig?.copy?.emailCapture?.emailConsentText
                         ?? viewModel.sdkConfig?.copy?.emailConsentText,
+                    prefilledEmail: viewModel.prefilledEmail,
                     onSubmit: { email, ageConfirmed, marketingConsent in
                         viewModel.submitEmail(email, ageConfirmed: ageConfirmed, marketingConsent: marketingConsent)
                     },
@@ -307,6 +321,11 @@ struct WINRV2CaptureView: View {
     let isSubmitting: Bool
     /// Server-driven marketing-consent copy; nil falls back to `defaultMarketingConsentText`.
     let marketingConsentText: String?
+    /// Partner-authenticated email (WINRUser.email). Non-nil AND well-formed →
+    /// the field renders pre-filled and READ-ONLY: WINR links accounts across
+    /// devices by email, so a free-typed address lets a user attach themselves to
+    /// someone else's record. Malformed or nil → the editable field, unchanged.
+    let prefilledEmail: String?
     /// (email, ageConfirmed, marketingConsent)
     let onSubmit: (String, Bool, Bool) -> Void
     let onInfo: () -> Void
@@ -315,15 +334,27 @@ struct WINRV2CaptureView: View {
     @State private var email = ""
     /// Unchecked by default — the age gate requires an affirmative action.
     @State private var isAdult = false
-    /// Marketing opt-in, pre-checked by default. This governs ONLY the publisher
-    /// marketing to this person — it has nothing to do with contacting them if they
-    /// win, which happens regardless. Declining does not block entry, so it is
-    /// deliberately excluded from `canSubmit`.
-    @State private var wantsMarketing = true
+    /// Marketing opt-in. This governs ONLY the publisher marketing to this
+    /// person — it has nothing to do with contacting them if they win, which
+    /// happens regardless. Declining does not block entry, so it is deliberately
+    /// excluded from `canSubmit`. UNCHECKED by default (changed Aug 2026):
+    /// pre-ticked consent boxes are invalid under GDPR and disfavored by US
+    /// state regulators; consent must be an affirmative act.
+    @State private var wantsMarketing = false
+
+    /// Basic shape check only — the server revalidates. Its job here is to decide
+    /// pre-fill vs editable, so a partner bug degrades to the normal typed flow
+    /// instead of locking a garbage value into a read-only field.
+    private var lockedEmail: String? {
+        guard let e = prefilledEmail?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+              e.contains("@"), e.contains("."), e.count >= 6, e.count <= 254
+        else { return nil }
+        return e
+    }
 
     private var day1Entries: Int { giveaway?.streakLadder.first ?? 10 }
     private var canSubmit: Bool {
-        isAdult && email.contains("@") && email.contains(".")
+        isAdult && (lockedEmail != nil || (email.contains("@") && email.contains(".")))
     }
 
     var body: some View {
@@ -365,7 +396,7 @@ struct WINRV2CaptureView: View {
                             title: "CLAIM MY \(day1Entries) ENTRIES",
                             isLoading: isSubmitting
                         ) {
-                            onSubmit(email.trimmingCharacters(in: .whitespacesAndNewlines), isAdult, wantsMarketing)
+                            onSubmit(lockedEmail ?? email.trimmingCharacters(in: .whitespacesAndNewlines), isAdult, wantsMarketing)
                         }
                         .opacity(canSubmit ? 1 : 0.5)
                         .disabled(!canSubmit || isSubmitting)
@@ -436,12 +467,28 @@ struct WINRV2CaptureView: View {
                 .resizable().scaledToFit()
                 .frame(width: 22, height: 18)
                 .foregroundColor(WINRV2Color.gunmetal.opacity(0.6))
-            TextField("Enter your email address", text: $email)
-                .font(WINRV2Font.inter(16))
-                .foregroundColor(WINRV2Color.gunmetal)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
+            if let locked = lockedEmail {
+                // Read-only, but VISIBLE: the user must see exactly which address
+                // they are consenting for. Text, not a disabled TextField, so no
+                // keyboard affordance appears.
+                Text(locked)
+                    .font(WINRV2Font.inter(16))
+                    .foregroundColor(WINRV2Color.gunmetal)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Spacer(minLength: 0)
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 13))
+                    .foregroundColor(WINRV2Color.gunmetal.opacity(0.45))
+                    .accessibilityLabel("Email provided by this app")
+            } else {
+                TextField("Enter your email address", text: $email)
+                    .font(WINRV2Font.inter(16))
+                    .foregroundColor(WINRV2Color.gunmetal)
+                    .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+            }
         }
         .padding(.horizontal, 20)
         .frame(height: 54)
@@ -641,5 +688,97 @@ struct WINRV2HowItWorksView: View {
             }
         }
         .foregroundColor(.white)
+    }
+}
+
+
+/// Verification code entry — shown when the typed email matches an EXISTING
+/// account and the OTP gate is on. One numeric field, auto-submits at 6 digits.
+struct WINRV2CodeEntryView: View {
+    let accent: Color
+    let logoUrl: String?
+    let rulesUrl: String?
+    let email: String
+    let isVerifying: Bool
+    let errorText: String?
+    let onSubmit: (String) -> Void
+    let onResend: () -> Void
+    let onInfo: () -> Void
+    let onClose: () -> Void
+
+    @State private var code = ""
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            WINRV2TopGlow(accent: accent).ignoresSafeArea()
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 18) {
+                    WINRV2Header(logoUrl: logoUrl, onInfo: onInfo, onClose: onClose)
+                        .padding(.top, 18)
+
+                    VStack(spacing: 8) {
+                        Text("CHECK YOUR EMAIL")
+                            .font(WINRV2Font.inter(28, .black))
+                            .foregroundColor(.white)
+                        Text("This email is already part of a WINR streak. Enter the 6-digit code we sent to \(email) to pick it up on this device.")
+                            .font(WINRV2Font.inter(14))
+                            .foregroundColor(.white.opacity(0.75))
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.horizontal, 26)
+
+                    VStack(spacing: 14) {
+                        TextField("••••••", text: $code)
+                            .font(WINRV2Font.inter(22, .bold))
+                            .foregroundColor(WINRV2Color.gunmetal)
+                            .keyboardType(.numberPad)
+                            .textContentType(.oneTimeCode)   // keyboard offers the code from Mail
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 20)
+                            .frame(height: 54)
+                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.white))
+                            .onChange(of: code) { newValue in
+                                let digits = newValue.filter(\.isNumber)
+                                if digits.count > 6 { code = String(digits.prefix(6)) }
+                                if digits.count == 6 && !isVerifying { onSubmit(String(digits.prefix(6))) }
+                            }
+
+                        if let errorText {
+                            Text(errorText)
+                                .font(WINRV2Font.inter(13))
+                                .foregroundColor(Color(red: 1, green: 0.42, blue: 0.39))
+                                .multilineTextAlignment(.center)
+                        }
+
+                        WINRV2PillButton(accent: accent, title: "VERIFY", isLoading: isVerifying) {
+                            let digits = code.filter(\.isNumber)
+                            if digits.count == 6 { onSubmit(digits) }
+                        }
+                        .disabled(isVerifying)
+
+                        Button(action: onResend) {
+                            // Two-tone: the question reads as copy, the underlined
+                            // action reads as a control.
+                            (Text("Didn't get it? ")
+                                .foregroundColor(.white.opacity(0.65))
+                             + Text("Send a new code")
+                                .foregroundColor(Color(red: 0.5, green: 0.69, blue: 1.0))
+                                .fontWeight(.bold)
+                                .underline())
+                                .font(WINRV2Font.inter(14))
+                        }
+                    }
+                    .padding(.horizontal, 22)
+
+                    Spacer(minLength: 40)
+
+                    // Same legal footer as the capture screen — one consent flow,
+                    // one footer; without it the sheet trails off into a void.
+                    WINRV2LegalLinks(rulesUrl: rulesUrl, showPoweredBy: true)
+                        .padding(.bottom, 24)
+                }
+                .frame(minHeight: UIScreen.main.bounds.height * 0.6)
+            }
+        }
     }
 }

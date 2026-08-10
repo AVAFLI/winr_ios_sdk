@@ -20,12 +20,40 @@ public struct WINRUser {
     /// User's phone number (optional, for SMS notifications)
     public var phone: String?
 
+    /// The user's email from YOUR authenticated session (optional).
+    ///
+    /// When supplied, the WINR capture screen shows it pre-filled and
+    /// READ-ONLY — the user cannot swap in a different address. That is
+    /// deliberate: WINR links accounts across devices by email, so a
+    /// free-typed address lets a user attach themselves to someone else's
+    /// record, and a partner-authenticated address is the most reliable
+    /// destination for a winner notification.
+    ///
+    /// Supplying it never records any consent. The user still sees the
+    /// address, ticks the age (and optionally marketing) boxes, and submits —
+    /// consent remains an explicit act inside the WINR flow. A malformed
+    /// value is ignored and the field stays editable, exactly as if no email
+    /// had been passed.
+    public var email: String?
+
     /// Create a WINR user with required identity and optional contact info.
-    /// Email is NOT accepted here — the SDK captures it via its own consent flow.
-    public init(id: String, firstName: String, lastName: String, phone: String? = nil) {
+    public init(id: String, firstName: String, lastName: String, phone: String? = nil, email: String? = nil) {
         self.id = id
         self.firstName = firstName
         self.lastName = lastName
         self.phone = phone
+        self.email = email
     }
+
+    /// A guest session — the person is not signed in to YOUR app (or your app
+    /// has no accounts). The SDK mints a stable per-install guest id
+    /// (`winr_guest_…`) and uses it for attribution, so there is always a real
+    /// identifier without your integration having to fabricate one. The WINR
+    /// experience is fully functional for guests: it captures its own email and
+    /// the streak survives your user later signing in — just call `configure`
+    /// again with the real user and attribution upgrades in place.
+    public static let guest = WINRUser(id: "", firstName: "", lastName: "")
+
+    /// True when this value is the `.guest` sentinel.
+    var isGuest: Bool { id.isEmpty }
 }

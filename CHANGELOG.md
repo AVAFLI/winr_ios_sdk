@@ -1,5 +1,48 @@
 # Changelog
 
+## 2.5.1 — 2026-08-10
+
+Consent correctness and cross-device security.
+
+- **Marketing consent checkbox starts UNCHECKED** — consent is an affirmative
+  act (pre-ticked boxes are invalid under GDPR and disfavored by US state
+  regulators). Declining still blocks nothing.
+- **Email pre-fill**: pass your signed-in user's email via `WINRUser.email` and
+  the capture screen shows it read-only — the address the user consents for is
+  always one they proved to you. Malformed values fall back to the editable
+  field.
+- **Guest sessions**: no account system, or the user is signed out? Use the
+  guest sentinel (or omit the user on web). The SDK mints a stable per-install
+  `winr_guest_…` id for attribution; re-configure with the real user later and
+  the streak carries over.
+- **Verified adoption**: typing an email that already belongs to an existing
+  WINR account now requires a 6-digit code sent to that inbox before the
+  streak transfers to the new device. Fresh signups and pre-filled partner
+  emails never see it.
+
+## [2.5.0] - 2026-08-06
+
+### Breaking
+
+`WINR.deleteAccount()` is **removed**. Use `WINR.optOut()`.
+
+It called a backend hard-delete that wiped the user's entry records. Those
+records are the evidence that a drawing was fair, and destroying them is not
+what erasure requires — GDPR Art. 17(3) exempts data needed for legal claims.
+It also left no tombstone, so delete-and-re-register farmed unlimited entries,
+and it never touched prize-claim records, leaving a winner's name, address and
+phone orphaned after the account pointing at them was gone.
+
+`optOut()` is the complete path: identity-wide, scrubs prize-claim PII too,
+tombstoned so it survives a reinstall, and it keeps de-identified records as
+proof the prize went to a real eligible person.
+
+### Removed
+
+Dead rewarded-video client code. The backend endpoint it called was deleted —
+it granted a second daily batch of entries and no SDK had invoked it since the
+V2 rebuild.
+
 ## [2.4.0] - 2026-08-05
 
 Consent capture. The 18+ checkbox has always been on the capture screen but its

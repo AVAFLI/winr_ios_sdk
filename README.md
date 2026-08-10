@@ -47,6 +47,24 @@ WINR.configure(config)
 
 > **Auto-open:** After `configure(_:)`, the SDK presents the experience automatically once per calendar day (on launch and whenever the app returns to the foreground on a new day). It can be disabled remotely via the dashboard's `experience.autoOpenEnabled` kill switch; unregistered users see at most 3 auto-opens until they submit an email, and RTD opted-out users never see it.
 
+### Guest / logged-out users
+
+No account system, or the user isn't signed in? Pass `WINRUser.guest`:
+
+```swift
+WINR.configure(WINRConfiguration(
+    apiKey: "winr_live_…",
+    environment: .production,
+    bundleId: Bundle.main.bundleIdentifier!,
+    user: .guest
+))
+```
+
+The SDK mints a stable per-install guest id (`winr_guest_…`) for attribution —
+never fabricate placeholder ids yourself. The experience is fully functional
+for guests. When the user signs in, call `configure` again with the real user:
+attribution upgrades in place and the streak carries over automatically.
+
 ## Installation
 
 WINR is distributed via **Swift Package Manager** and **CocoaPods**:
