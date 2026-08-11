@@ -47,6 +47,20 @@ enum WINRV2Strings {
     static let sessionExpired = "Your session has expired. Please try again."
     static let sessionExpiredRetry = "RETRY"
 
+    // MARK: - Privacy choices / RTD opt-out (how-it-works screen)
+
+    /// Muted entry-point link at the bottom of the how-it-works screen.
+    static let privacyChoices = "Privacy choices"
+    static let optOutTitle = "Delete my data & stop participating"
+    static let optOutBody = "This permanently deletes your WINR data, ends your giveaway participation, and cannot be undone. You can also email info@avafli.com."
+    static let optOutConfirm = "DELETE MY DATA"
+    static let optOutCancel = "Cancel"
+    /// Brief success state shown before the experience dismisses itself.
+    static let optOutSuccess = "Your data has been deleted."
+    /// The opt-out network call failed — the user stays on the confirmation
+    /// step and can retry. We never pretend the deletion succeeded.
+    static let optOutFailed = "Something went wrong. Please check your connection and try again."
+
     // MARK: - Generic friendly empty state (all other errors collapse here)
 
     static let emptyHeadline = "Nothing to see here yet"

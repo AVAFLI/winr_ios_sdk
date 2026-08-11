@@ -206,7 +206,8 @@ struct WINRV2ExperienceRoot: View {
                     day1Entries: viewModel.displayLadder.first ?? 10,
                     visitMode: viewModel.activeGiveawayConfig?.streakMode == "visit",
                     onDone: { viewModel.hideHowItWorks() },
-                    onClose: { viewModel.requestDismiss() }
+                    onClose: { viewModel.requestDismiss() },
+                    optOut: viewModel.optOutCoordinator
                 )
             }
         }
@@ -749,52 +750,137 @@ struct WINRV2HowItWorksView: View {
     var visitMode = false
     let onDone: () -> Void
     let onClose: () -> Void
+    /// The "Privacy choices" → delete-my-data flow (owned by the view model).
+    @ObservedObject var optOut: WINRV2OptOutCoordinator
 
     var body: some View {
-        VStack(spacing: 12) {
-            WINRV2Header(logoUrl: logoUrl, showsBack: true, onBack: onDone, onInfo: {}, onClose: onClose)
-                .padding(.top, 18)
+        ZStack {
+            VStack(spacing: 12) {
+                WINRV2Header(logoUrl: logoUrl, showsBack: true, onBack: onDone, onInfo: {}, onClose: onClose)
+                    .padding(.top, 18)
 
-            Text("HOW IT WORKS")
-                .font(WINRV2Font.inter(26, .black))
-                .kerning(-0.78)
-                .foregroundColor(WINRV2Color.gunmetal)
-                .frame(maxWidth: .infinity)
-                .frame(height: 39)
-                .background(Color.white.opacity(0.5))
+                Text("HOW IT WORKS")
+                    .font(WINRV2Font.inter(26, .black))
+                    .kerning(-0.78)
+                    .foregroundColor(WINRV2Color.gunmetal)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 39)
+                    .background(Color.white.opacity(0.5))
 
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 14) {
-                    item(number: "1", title: "ENTER ONCE",
-                         body: "Submit your email to receive \(day1Entries) entries instantly and start your streak.")
-                    item(number: "2", title: visitMode ? "KEEP VISITING" : "VISIT EVERY DAY",
-                         body: visitMode
-                            ? "Simply open the app whenever you like. Your entries are added automatically—no forms or extra steps."
-                            : "Simply open the app each day. Your entries are added automatically—no forms or extra steps.")
-                    item(number: "3", title: "KEEP YOUR STREAK GROWING",
-                         body: visitMode
-                            ? "Earn more entries with every visit. The more you come back, the bigger your rewards!"
-                            : "Earn more entries with every consecutive visit. The longer your streak, the bigger your daily rewards!")
-                }
-                .padding(.horizontal, 26)
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 14) {
+                        item(number: "1", title: "ENTER ONCE",
+                             body: "Submit your email to receive \(day1Entries) entries instantly and start your streak.")
+                        item(number: "2", title: visitMode ? "KEEP VISITING" : "VISIT EVERY DAY",
+                             body: visitMode
+                                ? "Simply open the app whenever you like. Your entries are added automatically—no forms or extra steps."
+                                : "Simply open the app each day. Your entries are added automatically—no forms or extra steps.")
+                        item(number: "3", title: "KEEP YOUR STREAK GROWING",
+                             body: visitMode
+                                ? "Earn more entries with every visit. The more you come back, the bigger your rewards!"
+                                : "Earn more entries with every consecutive visit. The longer your streak, the bigger your daily rewards!")
+                    }
+                    .padding(.horizontal, 26)
 
-                Text(visitMode
-                    ? "Every visit counts - your streak never resets."
-                    : "Don’t miss a day - your streak resets if you do.")
-                    .font(WINRV2Font.inter(20, .bold))
-                    .kerning(-0.6)
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
-                    .padding(.top, 22)
+                    Text(visitMode
+                        ? "Every visit counts - your streak never resets."
+                        : "Don’t miss a day - your streak resets if you do.")
+                        .font(WINRV2Font.inter(20, .bold))
+                        .kerning(-0.6)
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                        .padding(.top, 22)
 
-                WINRV2PillButton(accent: accent, title: "GOT IT - START MY STREAK") { onDone() }
-                    .padding(.horizontal, 28)
-                    .padding(.top, 20)
+                    WINRV2PillButton(accent: accent, title: "GOT IT - START MY STREAK") { onDone() }
+                        .padding(.horizontal, 28)
+                        .padding(.top, 20)
+
+                    // Muted privacy opt-out entry point — deliberately quiet:
+                    // present for those who look for it, invisible to the pitch.
+                    Button(action: { optOut.begin() }) {
+                        Text(WINRV2Strings.privacyChoices)
+                            .font(WINRV2Font.inter(12))
+                            .foregroundColor(WINRV2Color.textTertiary)
+                            .underline()
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 18)
                     .padding(.bottom, 30)
+                }
+            }
+
+            if optOut.phase != .idle {
+                optOutDialog
+                    .transition(.opacity)
             }
         }
         .background(WINRV2Color.panel.ignoresSafeArea())
+        .animation(.easeInOut(duration: 0.2), value: optOut.phase)
+    }
+
+    /// The destructive confirmation (and its in-flight / failed / deleted
+    /// states) — same scrim-plus-card treatment as the winners dialog.
+    private var optOutDialog: some View {
+        ZStack {
+            Color.black.opacity(0.55)
+                .ignoresSafeArea()
+                .onTapGesture { optOut.cancel() }
+
+            VStack(spacing: 14) {
+                if case .done = optOut.phase {
+                    Text(WINRV2Strings.optOutSuccess)
+                        .font(WINRV2Font.inter(18, .bold))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.vertical, 24)
+                } else {
+                    Text(WINRV2Strings.optOutTitle)
+                        .font(WINRV2Font.inter(18, .black))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                    Text(WINRV2Strings.optOutBody)
+                        .font(WINRV2Font.inter(14))
+                        .foregroundColor(.white.opacity(0.75))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if case let .failed(message) = optOut.phase {
+                        Text(message)
+                            .font(WINRV2Font.inter(13))
+                            .foregroundColor(WINRV2Color.errorRed)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    WINRV2PillButton(
+                        accent: WINRV2Color.errorRed,
+                        title: WINRV2Strings.optOutConfirm,
+                        isLoading: optOut.phase == .inFlight
+                    ) {
+                        optOut.confirm()
+                    }
+                    .padding(.top, 4)
+
+                    Button(action: { optOut.cancel() }) {
+                        Text(WINRV2Strings.optOutCancel)
+                            .font(WINRV2Font.inter(14))
+                            .foregroundColor(WINRV2Color.textTertiary)
+                            .underline()
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(optOut.phase == .inFlight)
+                }
+            }
+            .padding(22)
+            .frame(maxWidth: 340)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(WINRV2Color.deepCharcoal)
+                    .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.white.opacity(0.12), lineWidth: 1))
+            )
+            .padding(.horizontal, 24)
+        }
     }
 
     private func item(number: String, title: String, body: String) -> some View {

@@ -43,6 +43,87 @@ struct WINRV2DashboardNotice: Equatable {
     let showsRetry: Bool
 }
 
+/// Drives the "Privacy choices" → "Delete my data & stop participating" flow
+/// on the how-it-works screen. A tiny state machine, split out from the view
+/// model so the transitions are exercisable on their own with a stubbed
+/// opt-out action:
+///
+///     idle → confirming → inFlight → done → (dismiss whole experience)
+///                     ↘ failed (inline error, retryable) ↗
+///
+/// Failure NEVER pretends success — the confirmation stays up with the
+/// error and the destructive button remains available to retry.
+@MainActor
+final class WINRV2OptOutCoordinator: ObservableObject {
+
+    enum Phase: Equatable {
+        /// Nothing showing (the "Privacy choices" link is idle).
+        case idle
+        /// The destructive confirmation is up.
+        case confirming
+        /// DELETE MY DATA tapped; the /optOut round-trip is in flight.
+        case inFlight
+        /// The round-trip failed — confirmation stays up with this inline error.
+        case failed(String)
+        /// Deleted. "Your data has been deleted." holds briefly, then the
+        /// whole experience dismisses.
+        case done
+    }
+
+    @Published private(set) var phase: Phase = .idle
+
+    /// The real flow performs `WINR.optOut()`; tests inject a stub.
+    private let action: () async throws -> Void
+    /// Dismisses the WHOLE experience (not just the dialog) after success.
+    private let dismissExperience: () -> Void
+    /// How long the success state holds before the experience dismisses.
+    private let successHold: TimeInterval
+
+    nonisolated init(
+        successHold: TimeInterval = 1.4,
+        action: @escaping () async throws -> Void,
+        dismissExperience: @escaping () -> Void
+    ) {
+        self.successHold = successHold
+        self.action = action
+        self.dismissExperience = dismissExperience
+    }
+
+    /// "Privacy choices" tapped — raise the confirmation.
+    func begin() {
+        if case .idle = phase { phase = .confirming }
+    }
+
+    /// Cancel / tap-outside. A no-op while the call is in flight or after the
+    /// deletion has already happened.
+    func cancel() {
+        switch phase {
+        case .confirming, .failed: phase = .idle
+        case .idle, .inFlight, .done: break
+        }
+    }
+
+    /// DELETE MY DATA tapped (initial attempt or retry after failure).
+    func confirm() {
+        switch phase {
+        case .confirming, .failed: break
+        case .idle, .inFlight, .done: return
+        }
+        phase = .inFlight
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await self.action()
+                self.phase = .done
+                try? await Task.sleep(nanoseconds: UInt64(self.successHold * 1_000_000_000))
+                self.dismissExperience()
+            } catch {
+                self.phase = .failed(WINRV2Strings.optOutFailed)
+            }
+        }
+    }
+}
+
 final class WINRExperienceViewModel: ObservableObject {
 
     /// Non-PII flag marking that the user completed the email-capture / consent
@@ -251,6 +332,14 @@ final class WINRExperienceViewModel: ObservableObject {
     func requestDismiss() {
         NotificationCenter.default.post(name: .winrCloseRequested, object: nil)
     }
+
+    /// The "Privacy choices" → delete-my-data flow on the how-it-works screen.
+    /// On confirm it performs the real RTD opt-out (`WINR.optOut()`), holds the
+    /// success state a beat, then dismisses the whole experience.
+    lazy var optOutCoordinator = WINRV2OptOutCoordinator(
+        action: { try await WINR.optOut() },
+        dismissExperience: { [weak self] in self?.requestDismiss() }
+    )
 
     init(
         container: DependencyContainer,

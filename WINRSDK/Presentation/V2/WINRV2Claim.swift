@@ -104,7 +104,8 @@ struct WINRPrizeClaimForm {
 
     static let usStates = [
         "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
-        "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
+        "Connecticut", "Delaware", "District of Columbia", "Florida",
+        "Georgia", "Hawaii", "Idaho",
         "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana",
         "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota",
         "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada",

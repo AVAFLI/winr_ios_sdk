@@ -133,7 +133,7 @@ struct WINRClaimStepLockedField: View {
     }
 }
 
-/// The State dropdown: same box styling, Menu of the 50 states, chevron down.
+/// The State dropdown: same box styling, Menu of the 50 states + DC, chevron down.
 struct WINRClaimStepMenuField: View {
     let label: String
     let options: [String]

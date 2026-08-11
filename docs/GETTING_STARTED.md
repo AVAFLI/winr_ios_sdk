@@ -32,14 +32,14 @@ The SDK uses SwiftUI for its presentation layer and requires a UIKit host app (U
    ```
    https://github.com/AVAFLI/winr_ios_sdk.git
    ```
-3. Set the dependency rule to **Up to Next Major Version** from `2.4.0`
+3. Set the dependency rule to **Up to Next Major Version** from `2.6.1`
 4. Add the `WINRSDK` library to your app target
 
 Or in `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.4.0")
+    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.6.1")
 ]
 ```
 
@@ -48,7 +48,7 @@ dependencies: [
 Add the pod to your `Podfile` and install:
 
 ```ruby
-pod 'WINRSDK', '~> 2.3'
+pod 'WINRSDK', '~> 2.6'
 ```
 
 ```bash
@@ -87,7 +87,7 @@ Auto-open behavior:
 
 The auto-open is the only way the experience appears — there is no manual launch API. One call, and the experience opens itself once per day.
 
-> **Email:** The SDK captures email through its own opt-in consent UI. Do not pass email via `WINRUser`.
+> **Email:** If your app has an authenticated session, pass the user's email via `WINRUser(email:)`. The capture screen then shows that address pre-filled and **locked** (read-only) — WINR links accounts across devices by email, so a partner-authenticated address is the most reliable identity. Consent remains an explicit act inside the WINR flow: the user still sees the address, ticks the age (and optionally marketing) boxes, and submits. A malformed email is ignored and the field stays editable. If your app has no signed-in user, pass `WINRUser.guest` — the SDK mints a stable per-install guest id and captures email through its own consent UI.
 
 ---
 
@@ -140,8 +140,9 @@ Route SDK events to your analytics stack by passing an `AnalyticsAdapter` in `WI
 
 ## Privacy (GDPR / CCPA)
 
-- `try await WINR.deleteAccount()` — Right-to-be-Forgotten: permanently deletes all user data from WINR servers and clears local storage.
-- `try await WINR.optOut()` — Right-to-Delete opt-out: tombstones the person on the backend and permanently silences the experience on this device.
+- `try await WINR.optOut()` — Right-to-Delete opt-out: tombstones the person on the backend (identity-wide, PII scrubbed, survives reinstall) and permanently silences the experience on this device. Wire this to the opt-out action in your privacy-policy flow if you have one.
+- Users can also delete their own data in-experience: the how-it-works ("?") screen has a **Privacy choices** link that confirms and performs the same opt-out.
+- `deleteAccount()` was removed in 2.5.0 — `optOut()` is the correct erasure (a hard delete left no tombstone, enabling same-day entry farming).
 
 ---
 
