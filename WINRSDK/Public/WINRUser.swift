@@ -11,10 +11,10 @@ public struct WINRUser {
     /// Your app's unique user ID (Firebase UID, database ID, etc.)
     public let id: String
 
-    /// User's first name (required for personalized experiences)
+    /// User's first name (optional — the SDK collects it at prize-claim if missing)
     public let firstName: String
 
-    /// User's last name (required for sweepstakes eligibility)
+    /// User's last name (optional — the SDK collects it at prize-claim if missing)
     public let lastName: String
 
     /// User's phone number (optional, for SMS notifications)
@@ -36,8 +36,10 @@ public struct WINRUser {
     /// had been passed.
     public var email: String?
 
-    /// Create a WINR user with required identity and optional contact info.
-    public init(id: String, firstName: String, lastName: String, phone: String? = nil, email: String? = nil) {
+    /// Create a WINR user. Only `id` is required; everything else is optional and
+    /// the SDK captures what's missing (email via its capture screen, name via the
+    /// winner prize-claim form).
+    public init(id: String, firstName: String = "", lastName: String = "", phone: String? = nil, email: String? = nil) {
         self.id = id
         self.firstName = firstName
         self.lastName = lastName

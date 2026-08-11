@@ -548,7 +548,7 @@ public enum WINR {
     // MARK: - Profile Data Submission
 
     private static func hasProfileData(_ user: WINRUser) -> Bool {
-        return true  // firstName and lastName are always present
+        return !user.firstName.isEmpty || !user.lastName.isEmpty || user.phone != nil
     }
 
     private static func submitUserProfileIfNeeded(user: WINRUser) async {
