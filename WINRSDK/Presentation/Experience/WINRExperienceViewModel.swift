@@ -717,17 +717,78 @@ final class WINRExperienceViewModel: ObservableObject {
             } catch {
                 Logger.shared.log("Adoption code check failed: \(error)", level: .error)
                 await MainActor.run {
-                    self.codeError = "That code didn't match. Check the email and try again."
+                    // Three-way taxonomy (matched across SDKs): the backend sends
+                    // distinguishable failures for an expired code and a
+                    // too-many-attempts lockout; everything else is a mismatch.
+                    self.codeError = Self.codeErrorMessage(for: error)
                 }
             }
         }
     }
 
+    /// Maps a verifyAdoptionCode failure to user copy. The backend emits a
+    /// `deadline-exceeded` error whose message contains "expired" and a
+    /// `resource-exhausted` error whose message contains "attempts"; both reach
+    /// us as `WINRError.internalError(message)`. A plain mismatch arrives as a
+    /// `permission-denied`/auth error with no distinguishing keyword and falls
+    /// through to the generic "didn't match" copy. Matching is case-insensitive.
+    static func codeErrorMessage(for error: Error) -> String {
+        let raw: String
+        if let winr = error as? WINRError {
+            raw = winr.errorDescription ?? ""
+        } else {
+            raw = error.localizedDescription
+        }
+        let lowered = raw.lowercased()
+        if lowered.contains("expired") { return WINRV2Strings.codeExpired }
+        if lowered.contains("attempts") { return WINRV2Strings.codeTooManyAttempts }
+        return WINRV2Strings.codeIncorrect
+    }
+
     /// Request a fresh code by re-submitting the ORIGINAL email + consents.
+    ///
+    /// The code-entry screen stays up the entire time: a FAILED resend shows the
+    /// code-screen error inline instead of stranding the user back on email
+    /// capture, and a SUCCESSFUL resend leaves them on code entry ready to type
+    /// the new code. The consents are the ones captured on the original submit —
+    /// never fabricated or reset (the established pattern).
     func resendVerificationCode() {
         guard case let .codeEntry(email) = state, let consents = pendingConsents else { return }
-        state = .emailCapture
-        submitEmail(email, ageConfirmed: consents.age, marketingConsent: consents.marketing)
+        guard !isVerifyingCode else { return }
+        isVerifyingCode = true
+        codeError = nil
+        Task { [weak self] in
+            guard let self else { return }
+            defer { Task { @MainActor in self.isVerifyingCode = false } }
+            do {
+                let response = try await container.network.send(
+                    SubmitEmailRequest(email: email, ageConfirmed: consents.age, marketingConsent: consents.marketing)
+                )
+                // If the OTP gate is off and the backend adopted outright, honor
+                // it and load straight into the dashboard (same as submitEmail).
+                if response.adopted == true, let token = response.token, let uuid = response.uuid {
+                    container.keychain.saveToken(token)
+                    if let refresh = response.refreshToken { container.keychain.saveRefreshToken(refresh) }
+                    container.keychain.saveUUID(uuid)
+                    recordEmailConsent(ageConfirmed: consents.age, marketingConsent: consents.marketing)
+                    await MainActor.run { self.state = .loading }
+                    await load(claimBeforeDashboard: true)
+                    return
+                }
+                // Normal path: a fresh code is on its way. Stay on code entry.
+                await MainActor.run {
+                    self.codeError = nil
+                    self.state = .codeEntry(email: email)
+                }
+            } catch {
+                Logger.shared.log("Resend verification code failed: \(error)", level: .error)
+                await MainActor.run {
+                    // Keep the code screen up with an inline error — never
+                    // navigate away, so a failed resend can't strand the user.
+                    self.codeError = WINRV2Strings.resendFailed
+                }
+            }
+        }
     }
 
     func submitEmail(_ email: String, ageConfirmed: Bool, marketingConsent: Bool) {

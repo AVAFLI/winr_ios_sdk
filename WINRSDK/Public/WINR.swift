@@ -179,7 +179,11 @@ public enum WINR {
 
         // Unregistered users (no confirmed email) see the auto-open at most N
         // times (default 3 per the MVP decision), then the SDK goes quiet until
-        // they register.
+        // they register. We evaluate the cap here but DEFER counting the
+        // impression until presentation is actually committed (below) — mirroring
+        // web/Flutter, which check presentability first and count second, so a
+        // suppressed open never burns an impression.
+        var pendingImpressionCount: Int?
         if emailConsent != true {
             let cap = experience?.unregisteredImpressionCap ?? 3
             let seen = defaults.integer(forKey: unregisteredImpressionsKey)
@@ -187,12 +191,24 @@ public enum WINR {
                 Logger.shared.log("Auto-present skipped: unregistered impression cap (\(cap)) reached", level: .debug)
                 return
             }
-            defaults.set(seen + 1, forKey: unregisteredImpressionsKey)
+            pendingImpressionCount = seen
         }
 
-        // Don't stack on top of an already-presented experience.
-        if topViewController() is WINRExperienceViewController { return }
+        // Don't stack on top of an already-presented experience, and make sure a
+        // presenting view controller actually exists — otherwise nothing renders
+        // and neither the impression nor the once-per-day flag may be committed.
+        let top = topViewController()
+        if top is WINRExperienceViewController { return }
+        guard top != nil else {
+            Logger.shared.log("Auto-present skipped: no presenting view controller", level: .debug)
+            return
+        }
 
+        // Committed to presenting — NOW count the unregistered impression and
+        // mark today so a burned impression always corresponds to a real open.
+        if let seen = pendingImpressionCount {
+            defaults.set(seen + 1, forKey: unregisteredImpressionsKey)
+        }
         defaults.set(today, forKey: lastAutoPresentKey)
         Logger.shared.log("Auto-presenting WINR experience (first open of the day)", level: .info)
         present()

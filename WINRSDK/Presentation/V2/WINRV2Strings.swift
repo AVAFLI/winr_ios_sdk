@@ -27,6 +27,19 @@ enum WINRV2Strings {
     static let invalidLastName = "Please enter a valid last name."
     static let invalidPhone = "Please enter a valid 10-digit mobile number."
 
+    // MARK: - Adoption code entry
+
+    /// Three-way code-error taxonomy, matched across the SDKs. The backend sends
+    /// distinguishable failures (a `deadline-exceeded` "expired" error, a
+    /// `resource-exhausted` "too many attempts" error, and a generic mismatch);
+    /// the SDK maps them to these constants — raw backend text is never rendered.
+    /// The code screen stays up throughout, so all three point at "Send a new code".
+    static let codeExpired = "That code expired. Tap \"Send a new code\" to get a fresh one."
+    static let codeTooManyAttempts = "Too many attempts. Tap \"Send a new code\" to get a fresh one."
+    static let codeIncorrect = "That code didn't match. Check the email and try again."
+    /// A failed resend keeps the code screen up with this inline error.
+    static let resendFailed = "Couldn't send a new code. Check your connection and try again."
+
     // MARK: - Dashboard notices (transient, non-blocking)
 
     /// The backend rejected a claim as already-claimed when local state

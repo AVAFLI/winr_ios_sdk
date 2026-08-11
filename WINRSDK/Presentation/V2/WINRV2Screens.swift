@@ -114,6 +114,11 @@ struct WINRV2ExperienceRoot: View {
                     // marketing-consent copy, publisher-named by the backend.
                     marketingConsentText: viewModel.sdkConfig?.copy?.emailCapture?.emailConsentText
                         ?? viewModel.sdkConfig?.copy?.emailConsentText,
+                    // Nested per-screen age-gate copy first, then the flat legacy
+                    // field; the fallback label is built from ageGateMinAge below.
+                    ageGateText: viewModel.sdkConfig?.copy?.emailCapture?.ageGateText
+                        ?? viewModel.sdkConfig?.copy?.ageGateText,
+                    ageGateMinAge: viewModel.sdkConfig?.ageGateMinAge,
                     prefilledEmail: viewModel.prefilledEmail,
                     submitError: viewModel.emailSubmitError,
                     onSubmit: { email, ageConfirmed, marketingConsent in
@@ -238,7 +243,7 @@ struct WINRV2ExperienceRoot: View {
             Text(WINRV2Strings.emptyBody)
                 .font(WINRV2Font.inter(14))
                 .foregroundColor(WINRV2Color.textTertiary)
-            WINRV2PillButton(accent: WINRV2Color.winrBlue, title: WINRV2Strings.close) {
+            WINRV2PillButton(accent: accent, title: WINRV2Strings.close) {
                 viewModel.requestDismiss()
             }
             .frame(width: 220)
@@ -261,7 +266,7 @@ struct WINRV2ExperienceRoot: View {
                 .foregroundColor(WINRV2Color.textTertiary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 34)
-            WINRV2PillButton(accent: WINRV2Color.winrBlue, title: WINRV2Strings.close) {
+            WINRV2PillButton(accent: accent, title: WINRV2Strings.close) {
                 viewModel.requestDismiss()
             }
             .frame(width: 220)
@@ -279,7 +284,7 @@ struct WINRV2ExperienceRoot: View {
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 34)
-            WINRV2PillButton(accent: WINRV2Color.winrBlue, title: WINRV2Strings.sessionExpiredRetry) {
+            WINRV2PillButton(accent: accent, title: WINRV2Strings.sessionExpiredRetry) {
                 viewModel.retryAfterSessionExpiry()
             }
             .frame(width: 220)
@@ -401,6 +406,12 @@ struct WINRV2CaptureView: View {
     let isSubmitting: Bool
     /// Server-driven marketing-consent copy; nil falls back to `defaultMarketingConsentText`.
     let marketingConsentText: String?
+    /// Server-driven age-gate copy (publisher config). When present and non-empty
+    /// it is rendered verbatim; otherwise the label is BUILT from `ageGateMinAge`.
+    let ageGateText: String?
+    /// Server-driven minimum age used to build the fallback age-gate label when
+    /// `ageGateText` is absent. Nil → 18. NEVER hardcode 18 when config says otherwise.
+    let ageGateMinAge: Int?
     /// Partner-authenticated email (WINRUser.email). Non-nil AND well-formed →
     /// the field renders pre-filled and READ-ONLY: WINR links accounts across
     /// devices by email, so a free-typed address lets a user attach themselves to
@@ -441,6 +452,17 @@ struct WINRV2CaptureView: View {
     }
 
     private var day1Entries: Int { giveaway?.streakLadder.first ?? 10 }
+
+    /// The age-gate checkbox label. Publisher-provided `ageGateText` wins when
+    /// present and non-empty; otherwise the label is built from `ageGateMinAge`
+    /// (default 18) — the 18 is never hardcoded when config says otherwise.
+    private var ageGateLabel: String {
+        if let text = ageGateText?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
+            return text
+        }
+        let minAge = ageGateMinAge ?? 18
+        return "I confirm I am \(minAge) years of age or older"
+    }
     private var typedEmail: String {
         email.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -498,7 +520,7 @@ struct WINRV2CaptureView: View {
                             }
                         }
 
-                        checkbox("I confirm I am 18 years of age or older", isOn: isAdult) {
+                        checkbox(ageGateLabel, isOn: isAdult) {
                             isAdult.toggle()
                         }
 

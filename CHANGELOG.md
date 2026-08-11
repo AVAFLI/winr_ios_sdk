@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.6.2 — 2026-08-11
+
+2.6.2 — age-gate text honors publisher config; push notifications functional on
+Android/web; resend keeps the code screen; error screens pick up publisher
+branding.
+
+- **Age-gate copy honors server config** — the email-capture age checkbox now
+  renders the publisher's `ageGateText` when present, and otherwise builds the
+  label from `ageGateMinAge` ("I confirm I am {minAge} years of age or older",
+  default 18). The minimum age is never hardcoded when config says otherwise.
+- **Resend keeps the code screen** — requesting a new adoption code no longer
+  flips back to email capture first, so a failed resend shows an inline error on
+  the code screen instead of stranding the user. The original age/marketing
+  consents are reused, never fabricated or reset.
+- **Impression counter matches web/Flutter** — the unregistered auto-open
+  impression is counted only after presentation is committed (a presenting view
+  controller exists), so a suppressed open never burns an impression.
+- **Error screens pick up publisher branding** — the empty, geo-blocked, and
+  session-expired screens now use the publisher accent color instead of WINR
+  blue, matching the dashboard screens.
+- **Three-way adoption-code error taxonomy** — an expired code and a
+  too-many-attempts lockout now show distinct messages (from the backend's
+  `deadline-exceeded` / `resource-exhausted` errors); other failures keep the
+  generic "that code didn't match" copy.
+
 ## 2.6.1 — 2026-08-11
 
 In-experience privacy opt-out (delete my data); District of Columbia added to
