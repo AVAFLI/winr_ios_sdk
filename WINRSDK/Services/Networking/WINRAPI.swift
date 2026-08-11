@@ -49,6 +49,12 @@ struct RegisterDeviceResponse: Decodable {
     /// Present only when this person is the drawn winner of one of this
     /// publisher's giveaways (winner prize-claim flow).
     let prizeClaim: PrizeClaimBlock?
+    /// Soft email-verification signal. `false` = the user typed a brand-new email
+    /// that hasn't been confirmed yet (show the "Verify your email" chip). ABSENT
+    /// for verified users, partner-passed emails, adoption-verified users, and
+    /// users with no email — only an explicit `false` counts as "unverified".
+    /// Never gates play; affects prize-draw eligibility only (server-side).
+    let emailVerified: Bool?
 }
 
 // MARK: - SDK Config (server-driven copy & branding)
@@ -346,6 +352,12 @@ struct SubmitEmailResponse: Decodable {
     let uuid: String?
     let token: String?
     let refreshToken: String?
+    /// Soft email-verification signal for a freshly-typed email. `false` = not yet
+    /// confirmed (show the "Verify your email" chip). ABSENT for verified /
+    /// partner-passed / adoption-verified / no-email users. See RegisterDeviceResponse.
+    let emailVerified: Bool?
+    /// The backend just dispatched a verification code to the typed inbox.
+    let emailVerificationSent: Bool?
 }
 
 /// Completes a verification-gated adoption with the emailed 6-digit code.
@@ -358,6 +370,41 @@ struct VerifyAdoptionCodeRequest: APIRequest {
     var body: Data? {
         try? JSONSerialization.data(withJSONObject: ["data": ["code": code]])
     }
+}
+
+// MARK: - Email verification (soft gate)
+
+/// Confirms a freshly-typed email with the 6-digit code sent to that inbox.
+/// Mirrors the adoption code envelope, but this flow is a SOFT gate — it never
+/// blocks play, it only makes the person eligible for the prize draw. Throws on
+/// a bad code; the thrown message carries the "expired"/"attempts"/mismatch
+/// keyword that `codeErrorMessage(for:)` maps to user copy.
+struct ConfirmEmailVerificationRequest: APIRequest {
+    typealias Response = ConfirmEmailVerificationResponse
+    let code: String
+    var path: String { "confirmEmailVerification" }
+    var method: String { "POST" }
+    var body: Data? {
+        try? JSONSerialization.data(withJSONObject: ["data": ["code": code]])
+    }
+}
+
+struct ConfirmEmailVerificationResponse: Decodable {
+    let verified: Bool
+}
+
+/// Re-sends the email-verification code to the inbox on file. No arguments.
+struct ResendEmailVerificationRequest: APIRequest {
+    typealias Response = ResendEmailVerificationResponse
+    var path: String { "resendEmailVerification" }
+    var method: String { "POST" }
+    var body: Data? {
+        try? JSONSerialization.data(withJSONObject: ["data": [:] as [String: String]])
+    }
+}
+
+struct ResendEmailVerificationResponse: Decodable {
+    let sent: Bool
 }
 
 // MARK: - Submit User Profile
@@ -506,6 +553,10 @@ struct GetActiveGiveawayResponse: Decodable {
     /// `status == "pending"` drives the winner splash → claim form flow;
     /// `"submitted"` means the form was already sent (normal dashboard shows).
     let prizeClaim: PrizeClaimBlock?
+    /// Soft email-verification signal. `false` = a brand-new typed email awaiting
+    /// confirmation (show the "Verify your email" chip). ABSENT for verified /
+    /// partner-passed / adoption-verified / no-email users. Never gates play.
+    let emailVerified: Bool?
 }
 
 // MARK: - Prize Claim (winner flow)

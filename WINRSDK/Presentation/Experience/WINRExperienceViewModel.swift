@@ -148,6 +148,10 @@ final class WINRExperienceViewModel: ObservableObject {
         /// Verified adoption: the typed email matches an existing account; the
         /// merge waits on the 6-digit code sent to that inbox.
         case codeEntry(email: String)
+        /// Soft email verification: reached by tapping the dashboard chip. Reuses
+        /// the adoption code screen but is DISMISSIBLE (Cancel returns to the
+        /// dashboard) and never gates play — it only confirms draw eligibility.
+        case emailVerification
         case streak(StreakState, Int, [Int])
         case milestoneCelebration(MilestoneAward, DailyEntryGrant)
         /// Daily entries confirmation screen
@@ -228,6 +232,11 @@ final class WINRExperienceViewModel: ObservableObject {
     @Published var isSubmittingEmail = false
     @Published var isVerifyingCode = false
     @Published var codeError: String?
+
+    /// Soft email-verification affordance: `true` when the backend reported the
+    /// user's freshly-typed email as unverified (`emailVerified == false`). Drives
+    /// the persistent "Verify your email" chip on the dashboard. Never gates play.
+    @Published var emailUnverified: Bool = false
     /// Inline error on the capture screen when the email submit network call
     /// failed — the user stays on the capture screen and can retry.
     @Published var emailSubmitError: String?
@@ -480,6 +489,12 @@ final class WINRExperienceViewModel: ObservableObject {
                 if response.emailConsentStatus == true {
                     try? storage.save(true, for: emailSubmittedKey)
                 }
+
+                // Soft email-verification signal: ONLY an explicit `false` means
+                // "typed a new email, not yet confirmed" → show the chip. Absent
+                // (verified / partner-passed / adoption-verified / no email)
+                // leaves the chip hidden. Never gates play.
+                emailUnverified = Self.showsVerifyEmailChip(emailVerified: response.emailVerified)
             } catch {
                 // Backend geo-fence rejection: a dedicated state, never the
                 // generic empty state — the person needs to know WHY there is
@@ -726,6 +741,14 @@ final class WINRExperienceViewModel: ObservableObject {
         }
     }
 
+    /// The soft-verification chip-visibility rule, in one place: ONLY an explicit
+    /// `false` (a freshly-typed, unconfirmed email) shows the "Verify your email"
+    /// chip. Absent (verified / partner-passed / adoption-verified / no email) and
+    /// an explicit `true` never do. Never gates play.
+    static func showsVerifyEmailChip(emailVerified: Bool?) -> Bool {
+        emailVerified == false
+    }
+
     /// Maps a verifyAdoptionCode failure to user copy. The backend emits a
     /// `deadline-exceeded` error whose message contains "expired" and a
     /// `resource-exhausted` error whose message contains "attempts"; both reach
@@ -791,6 +814,86 @@ final class WINRExperienceViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Email verification (soft gate — dismissible, never blocks play)
+
+    /// Open the verification screen from the dashboard chip. Dismissible (unlike
+    /// adoption): `hideEmailVerification()` returns to whatever primary screen
+    /// was showing.
+    @MainActor
+    func showEmailVerification() {
+        codeError = nil
+        lastPrimaryState = state
+        state = .emailVerification
+    }
+
+    /// Cancel/back out of the verification screen — return to the dashboard.
+    @MainActor
+    func hideEmailVerification() {
+        codeError = nil
+        if let previous = lastPrimaryState {
+            state = previous
+        } else {
+            state = .loading
+            Task { await load() }
+        }
+    }
+
+    /// Confirm the freshly-typed email with the 6-digit code. On success: hide
+    /// the chip, drop a brief "Email verified ✓" confirmation, and return to the
+    /// dashboard. On failure: stay on the code screen with the mapped inline
+    /// error (same three-way taxonomy as adoption).
+    @MainActor
+    func confirmEmailVerification(_ code: String) {
+        guard !isVerifyingCode else { return }
+        isVerifyingCode = true
+        codeError = nil
+        Task { [weak self] in
+            guard let self else { return }
+            defer { Task { @MainActor in self.isVerifyingCode = false } }
+            do {
+                let response = try await container.network.send(ConfirmEmailVerificationRequest(code: code))
+                await MainActor.run {
+                    if response.verified {
+                        self.emailUnverified = false
+                        Logger.shared.log("Email verified — draw eligibility confirmed", level: .info)
+                        // Return to the dashboard and float a brief confirmation.
+                        if let previous = self.lastPrimaryState {
+                            self.state = previous
+                        }
+                        self.showDashboardNotice(WINRV2Strings.verifyEmailSuccess, showsRetry: false)
+                    } else {
+                        self.codeError = WINRV2Strings.codeIncorrect
+                    }
+                }
+            } catch {
+                Logger.shared.log("Email verification code check failed: \(error)", level: .error)
+                await MainActor.run {
+                    self.codeError = Self.codeErrorMessage(for: error)
+                }
+            }
+        }
+    }
+
+    /// Re-send the email-verification code. Stays on the code screen throughout —
+    /// a failed resend shows an inline error rather than stranding the user.
+    @MainActor
+    func resendEmailVerification() {
+        guard !isVerifyingCode else { return }
+        isVerifyingCode = true
+        codeError = nil
+        Task { [weak self] in
+            guard let self else { return }
+            defer { Task { @MainActor in self.isVerifyingCode = false } }
+            do {
+                _ = try await container.network.send(ResendEmailVerificationRequest())
+                await MainActor.run { self.codeError = nil }
+            } catch {
+                Logger.shared.log("Resend email verification failed: \(error)", level: .error)
+                await MainActor.run { self.codeError = WINRV2Strings.resendFailed }
+            }
+        }
+    }
+
     func submitEmail(_ email: String, ageConfirmed: Bool, marketingConsent: Bool) {
         guard !email.isEmpty else { return }
 
@@ -831,6 +934,10 @@ final class WINRExperienceViewModel: ObservableObject {
                     container.keychain.saveUUID(uuid)
                     Logger.shared.log("Adopted existing account — streak unified across devices", level: .info)
                 }
+                // Soft email-verification: a brand-new typed email comes back
+                // `emailVerified == false` — surface the dashboard chip right away
+                // (the subsequent load re-confirms it). Only an explicit false counts.
+                await MainActor.run { self.emailUnverified = Self.showsVerifyEmailChip(emailVerified: response.emailVerified) }
                 // The backend has the email now — persist the non-PII consent
                 // flags and refresh the facade's cached consent (otherwise only
                 // getActiveGiveaway refreshes it, which can be a session away).

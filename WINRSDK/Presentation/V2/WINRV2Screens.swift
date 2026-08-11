@@ -102,6 +102,25 @@ struct WINRV2ExperienceRoot: View {
                     onInfo: { viewModel.showHowItWorks() },
                     onClose: { viewModel.requestDismiss() }
                 )
+            case .emailVerification:
+                // Soft email verification: SAME code-entry screen as adoption,
+                // but with verify copy, the confirm/resend callables, and a
+                // Cancel (onClose) that returns to the dashboard — this flow is
+                // dismissible and never gates play.
+                WINRV2CodeEntryView(
+                    accent: accent,
+                    logoUrl: logoUrl,
+                    rulesUrl: rulesUrl,
+                    email: "",
+                    headline: WINRV2Strings.verifyEmailHeader.uppercased(),
+                    subtitle: WINRV2Strings.verifyEmailSubtitle,
+                    isVerifying: viewModel.isVerifyingCode,
+                    errorText: viewModel.codeError,
+                    onSubmit: { viewModel.confirmEmailVerification($0) },
+                    onResend: { viewModel.resendEmailVerification() },
+                    onInfo: { viewModel.showHowItWorks() },
+                    onClose: { viewModel.hideEmailVerification() }
+                )
             case .emailCapture:
                 WINRV2CaptureView(
                     accent: accent,
@@ -149,6 +168,8 @@ struct WINRV2ExperienceRoot: View {
                     onInfo: { viewModel.showHowItWorks() },
                     onClose: { viewModel.requestDismiss() },
                     onWinnerTap: { showWinnerModal = true },
+                    showVerifyEmailChip: viewModel.emailUnverified,
+                    onVerifyEmailTap: { viewModel.showEmailVerification() },
                     pendingClaimEntries: viewModel.pendingRevealGrant.map { $0.baseEntries + $0.bonusEntries },
                     revealed: viewModel.claimRevealed
                 )
@@ -660,6 +681,11 @@ struct WINRV2DashboardView: View {
     let onInfo: () -> Void
     let onClose: () -> Void
     var onWinnerTap: (() -> Void)? = nil
+    /// Soft email-verification nudge: a persistent, dismissible chip pinned near
+    /// the top of the dashboard while a freshly-typed email is unverified. Never
+    /// blocks the streak content beneath it.
+    var showVerifyEmailChip: Bool = false
+    var onVerifyEmailTap: (() -> Void)? = nil
     /// Reveal flow (Day 2+): the claim already succeeded server-side; the UI
     /// mounts pinned to yesterday's numbers and the celebration (tile check +
     /// confetti + totals update, bar → "N ENTRIES ADDED") fires on its own a
@@ -713,6 +739,10 @@ struct WINRV2DashboardView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 15) {
+                    if showVerifyEmailChip, let onVerifyEmailTap {
+                        WINRV2VerifyEmailChip(accent: accent, onTap: onVerifyEmailTap)
+                            .padding(.horizontal, 22)
+                    }
                     if giveaway?.latestWinner != nil, let onWinnerTap {
                         WINRV2WinnerBanner(onTap: onWinnerTap)
                     }
@@ -760,6 +790,45 @@ struct WINRV2DashboardView: View {
             }
         }
         .background(WINRV2Color.gunmetal)
+    }
+}
+
+// MARK: - Verify-email chip (soft gate)
+
+/// Subtle, persistent, tappable pill nudging the user to verify a freshly-typed
+/// email. Uses the publisher accent (tinted, not filled — a gentle nudge, not an
+/// error), sits inline in the dashboard flow, and never covers streak content.
+struct WINRV2VerifyEmailChip: View {
+    let accent: Color
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 8) {
+                Image(systemName: "envelope.badge")
+                    .font(.system(size: 14, weight: .bold))
+                Text(WINRV2Strings.verifyEmailChip)
+                    .font(WINRV2Font.inter(13, .bold))
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .opacity(0.7)
+            }
+            .foregroundColor(accent)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(accent.opacity(0.14))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .strokeBorder(accent.opacity(0.35), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(WINRV2Strings.verifyEmailChip)
     }
 }
 
@@ -929,6 +998,10 @@ struct WINRV2CodeEntryView: View {
     let logoUrl: String?
     let rulesUrl: String?
     let email: String
+    /// Headline / subtitle default to the adoption copy; the soft email-
+    /// verification flow reuses this same screen with its own copy.
+    var headline: String = "CHECK YOUR EMAIL"
+    var subtitle: String? = nil
     let isVerifying: Bool
     let errorText: String?
     let onSubmit: (String) -> Void
@@ -937,6 +1010,10 @@ struct WINRV2CodeEntryView: View {
     let onClose: () -> Void
 
     @State private var code = ""
+
+    private var resolvedSubtitle: String {
+        subtitle ?? "This email is already part of a WINR streak. Enter the 6-digit code we sent to \(email) to pick it up on this device."
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -947,10 +1024,10 @@ struct WINRV2CodeEntryView: View {
                         .padding(.top, 18)
 
                     VStack(spacing: 8) {
-                        Text("CHECK YOUR EMAIL")
+                        Text(headline)
                             .font(WINRV2Font.inter(28, .black))
                             .foregroundColor(.white)
-                        Text("This email is already part of a WINR streak. Enter the 6-digit code we sent to \(email) to pick it up on this device.")
+                        Text(resolvedSubtitle)
                             .font(WINRV2Font.inter(14))
                             .foregroundColor(.white.opacity(0.75))
                             .multilineTextAlignment(.center)

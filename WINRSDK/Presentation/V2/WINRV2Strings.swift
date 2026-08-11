@@ -40,6 +40,16 @@ enum WINRV2Strings {
     /// A failed resend keeps the code screen up with this inline error.
     static let resendFailed = "Couldn't send a new code. Check your connection and try again."
 
+    // MARK: - Email verification (soft gate — dismissible, never blocks play)
+
+    /// Persistent dashboard chip shown while a freshly-typed email is unverified.
+    static let verifyEmailChip = "Verify your email"
+    /// Header + subtitle on the verification screen (reuses the adoption code UI).
+    static let verifyEmailHeader = "Verify your email"
+    static let verifyEmailSubtitle = "Enter the 6-digit code we sent to your inbox so you're eligible to win."
+    /// Brief transient confirmation after a successful verification.
+    static let verifyEmailSuccess = "Email verified ✓"
+
     // MARK: - Dashboard notices (transient, non-blocking)
 
     /// The backend rejected a claim as already-claimed when local state

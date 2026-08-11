@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'WINRSDK'
-  s.version          = '2.6.3'
+  s.version          = '2.7.0'
   s.summary          = 'Sweepstakes-as-a-Service SDK for iOS apps'
   s.description      = <<-DESC
     WINR SDK enables app publishers to instantly add sweepstakes and prizing
