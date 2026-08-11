@@ -2,7 +2,7 @@
 
 ## Overview
 
-WINR SDK enables app publishers to instantly add sweepstakes and prizing functionality to their iOS apps. Users earn daily entries with escalating streak rewards and server-configurable milestone bonuses. The SDK handles device registration, token management, email capture, streak tracking, and entry submission behind a fully managed UI.
+WINR SDK enables app publishers to instantly add sweepstakes and prizing functionality to their iOS apps. Users earn daily entries on a simple +10-per-day streak ladder, claimed automatically when the drawer opens. The SDK handles device registration, token management, email capture (with explicit marketing consent and a publisher-configurable age gate), streak tracking, and entry submission behind a fully managed UI.
 
 The V2 experience is a bottom drawer that opens itself on the first app-open of each day, claims the user's daily entries automatically, and celebrates the result. You integrate once; prize configuration and branding are managed server-side from the WINR dashboard.
 
@@ -32,14 +32,14 @@ The SDK uses SwiftUI for its presentation layer and requires a UIKit host app (U
    ```
    https://github.com/AVAFLI/winr_ios_sdk.git
    ```
-3. Set the dependency rule to **Up to Next Major Version** from `2.6.1`
+3. Set the dependency rule to **Up to Next Major Version** from `2.7.0`
 4. Add the `WINRSDK` library to your app target
 
 Or in `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.6.1")
+    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.7.0")
 ]
 ```
 
@@ -48,7 +48,7 @@ dependencies: [
 Add the pod to your `Podfile` and install:
 
 ```ruby
-pod 'WINRSDK', '~> 2.6'
+pod 'WINRSDK', '~> 2.7'
 ```
 
 ```bash
@@ -88,6 +88,13 @@ Auto-open behavior:
 The auto-open is the only way the experience appears — there is no manual launch API. One call, and the experience opens itself once per day.
 
 > **Email:** If your app has an authenticated session, pass the user's email via `WINRUser(email:)`. The capture screen then shows that address pre-filled and **locked** (read-only) — WINR links accounts across devices by email, so a partner-authenticated address is the most reliable identity. Consent remains an explicit act inside the WINR flow: the user still sees the address, ticks the age (and optionally marketing) boxes, and submits. A malformed email is ignored and the field stays editable. If your app has no signed-in user, pass `WINRUser.guest` — the SDK mints a stable per-install guest id and captures email through its own consent UI.
+>
+> Two email safeguards run inside that flow, no integration needed: typing an
+> address that already belongs to an existing WINR account requires a 6-digit
+> code before the streak merges to this device (fresh signups and pre-filled
+> partner emails skip it), and a brand-new typed address gets a soft "verify
+> your email" chip on the dashboard — it never blocks daily play, only
+> prize-draw eligibility.
 
 ---
 
@@ -141,8 +148,8 @@ Route SDK events to your analytics stack by passing an `AnalyticsAdapter` in `WI
 ## Privacy (GDPR / CCPA)
 
 - `try await WINR.optOut()` — Right-to-Delete opt-out: tombstones the person on the backend (identity-wide, PII scrubbed, survives reinstall) and permanently silences the experience on this device. Wire this to the opt-out action in your privacy-policy flow if you have one.
-- Users can also delete their own data in-experience: the how-it-works ("?") screen has a **Privacy choices** link that confirms and performs the same opt-out.
-- `deleteAccount()` was removed in 2.5.0 — `optOut()` is the correct erasure (a hard delete left no tombstone, enabling same-day entry farming).
+- Users can also delete their own data in-experience: the how-it-works ("?") screen has a **Privacy choices → delete my data** link that confirms and performs the same opt-out.
+- `optOut()` is the only erasure API — there is no hard-delete of entry records, which would leave no tombstone and enable same-day entry farming.
 
 ---
 

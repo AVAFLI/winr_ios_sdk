@@ -45,17 +45,9 @@ Right-to-Delete opt-out: tombstones the person on the backend (identity-wide, PI
 
 **Throws:** `WINRError.notConfigured`, `WINRError.authenticationRequired`.
 
----
-
-### `deleteAccount()`
-
-```swift
-public static func deleteAccount() async throws
-```
-
-GDPR/CCPA Right-to-be-Forgotten: deletes all user data from the WINR backend, then clears all local Keychain data (tokens, UUID, refresh token).
-
-**Throws:** `WINRError.notConfigured`, `WINRError.authenticationRequired`.
+`optOut()` is the only erasure API — there is no hard-delete method. Users can
+also invoke it themselves from the in-app **Privacy choices → delete my data**
+link on the how-it-works ("?") screen.
 
 ---
 
@@ -147,18 +139,36 @@ Production-only — there is no staging or QA backend.
 
 ```swift
 public struct WINRUser {
-    public init(id: String, firstName: String, lastName: String, phone: String? = nil)
+    public init(
+        id: String,
+        firstName: String = "",
+        lastName: String = "",
+        phone: String? = nil,
+        email: String? = nil
+    )
+
+    /// A guest session — the person is not signed in to your app (or your app
+    /// has no accounts). The SDK mints a stable per-install `winr_guest_…` id.
+    public static let guest: WINRUser
 }
 ```
 
+Only `id` is required; everything else is optional and the SDK captures what's
+missing (email via its capture screen, name at prize-claim if the user wins).
+Pass whatever identity you already hold — even just an id.
+
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `id` | `String` | ✅ | Your app's unique, stable user identifier |
-| `firstName` | `String` | ✅ | User's first name |
-| `lastName` | `String` | ✅ | User's last name (required for sweepstakes eligibility) |
+| `id` | `String` | ✅ | Your app's unique, stable user identifier (the only required field) |
+| `firstName` | `String` | — | User's first name; captured at prize-claim if omitted |
+| `lastName` | `String` | — | User's last name; captured at prize-claim if omitted |
 | `phone` | `String?` | — | Phone number in E.164 format |
+| `email` | `String?` | — | From your authenticated session. If passed, it pre-fills and **locks** the capture field; if omitted, the SDK captures it. A plain `String`. |
 
-> Email is **not** accepted here — the SDK captures it via its own consent flow.
+> **Email:** A supplied `email` never records consent — the user still ticks
+> the age (and optionally marketing) boxes and submits inside the WINR flow. A
+> malformed value is ignored and the field stays editable. For apps with no
+> signed-in user, use `WINRUser.guest`.
 
 ---
 
@@ -196,7 +206,7 @@ public struct DailyEntryGrant {
 }
 ```
 
-The entries granted during an auto-opened session. `baseEntries` is the daily streak-ladder amount; `bonusEntries` holds milestone / weekly / monthly bonuses granted alongside it.
+The entries granted during an auto-opened session. `baseEntries` is the daily streak-ladder amount (a simple +10 per day); `bonusEntries` defaults to `0` and holds any additional entries granted alongside the daily amount.
 
 ---
 
@@ -210,7 +220,7 @@ public protocol AnalyticsAdapter {
 
 Implement to route WINR events to your analytics backend (Firebase Analytics, Amplitude, Mixpanel, …). The SDK ships with `ConsoleAnalyticsAdapter` (logs to the Xcode console) as the default.
 
-Convenience helpers are provided as protocol extensions: `trackRegistration(userId:)`, `trackExperienceOpened(giveawayId:)`, `trackExperienceClosed(giveawayId:)`, `trackDailyEntryClaimed(day:entries:)`, `trackBonusEntryClaimed(source:entries:)`, `trackStreakMilestone(day:bonusEntries:)`, `trackPrizeWon(prizeName:prizeValue:)`.
+Convenience helpers are provided as protocol extensions: `trackRegistration(userId:)`, `trackExperienceOpened(giveawayId:)`, `trackExperienceClosed(giveawayId:)`, `trackDailyEntryClaimed(day:entries:)`, `trackPrizeWon(prizeName:prizeValue:)`.
 
 ---
 
@@ -221,11 +231,9 @@ Event-name constants emitted by the SDK:
 | Constant | Event name | When |
 |----------|------------|------|
 | `registration` | `winr_registration` | Device/user registered with WINR |
-| `experienceOpened` | `winr_experience_opened` | The experience opened (auto-open or manual) |
+| `experienceOpened` | `winr_experience_opened` | The experience opened (once-per-day auto-open) |
 | `experienceClosed` | `winr_experience_closed` | The experience was dismissed |
 | `dailyEntryClaimed` | `winr_daily_entry_claimed` | Daily entries awarded (auto-claimed on open) |
-| `bonusEntryClaimed` | `winr_bonus_entry_claimed` | Bonus entries granted (e.g. streak accelerators) |
-| `streakMilestone` | `winr_streak_milestone` | A streak milestone was reached |
 | `prizeWon` | `winr_prize_won` | The user was selected as a winner |
 
 ---
@@ -234,7 +242,7 @@ Event-name constants emitted by the SDK:
 
 ```swift
 public enum WINRConstants {
-    public static let sdkVersion = "2.4.0"
+    public static let sdkVersion = "2.7.0"
     public static let platformOS = "iOS"
 }
 ```

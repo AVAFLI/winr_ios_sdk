@@ -123,31 +123,25 @@ See the [event list](API_REFERENCE.md#winranalyticsevent) for everything the SDK
 
 ## 5. GDPR / CCPA Flows
 
-Right-to-be-Forgotten (delete all data):
-
-```swift
-Task {
-    do {
-        try await WINR.deleteAccount()
-        print("WINR data deleted.")
-    } catch {
-        print("Deletion failed: \(error)")
-    }
-}
-```
-
-Right-to-Delete opt-out (never show WINR again):
+Right-to-be-Forgotten — `optOut()` is the single, complete erasure path. It
+scrubs the person's PII everywhere (including prize-claim records), links their
+devices so one call covers all of them, tombstones so it survives a reinstall,
+and permanently silences the experience:
 
 ```swift
 Task {
     do {
         try await WINR.optOut()
-        print("User opted out — WINR experience permanently silenced.")
+        print("User opted out — data erased, WINR experience permanently silenced.")
     } catch {
         print("Opt-out failed: \(error)")
     }
 }
 ```
+
+Users can also run the same opt-out themselves, no wiring required, via the
+in-app **Privacy choices → delete my data** link on the how-it-works ("?")
+screen.
 
 ---
 

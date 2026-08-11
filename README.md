@@ -4,7 +4,7 @@
 [![Platform](https://img.shields.io/badge/platform-iOS%2015.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange.svg)](https://swift.org)
 [![SPM](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://swift.org/package-manager/)
-[![CocoaPods](https://img.shields.io/badge/CocoaPods-2.5.0-red.svg)](https://cocoapods.org/pods/WINRSDK)
+[![CocoaPods](https://img.shields.io/badge/CocoaPods-2.7.0-red.svg)](https://cocoapods.org/pods/WINRSDK)
 
 ---
 
@@ -15,12 +15,15 @@ WINR lets you add daily-entry sweepstakes and prize experiences to your app in u
 **Key capabilities:**
 - **Daily entry sweepstakes** — Users earn entries every day they engage
 - **V2 auto-open experience** — The bottom-drawer experience opens itself on the first app-open of each day and grants entries automatically
-- **Streak ladder + milestone accelerators** — Escalating daily entry rewards, with server-configurable milestone bonuses
+- **Daily streak ladder + auto-claim** — A simple +10-entries-per-day ladder, claimed automatically the moment the drawer opens
+- **Email capture with explicit consent** — The SDK captures an email through its own screen, with an unchecked-by-default marketing-consent box and a publisher-configurable age gate
+- **Cross-device verified adoption** — Typing an email that matches an existing WINR account requires a 6-digit code before the streak merges to the new device
+- **"Verify your email" soft-verification** — A persistent chip on the dashboard lets users confirm a brand-new typed address; it never blocks daily play, only prize-draw eligibility
 - **Winner announcements** — "WE HAVE A WINNER!" banner and winner dialog, driven by the giveaway's `latestWinner`
 - **Visit mode** — A never-resetting streak variant for low-frequency apps
 - **Push reminders** — Drive re-engagement with daily nudges (FCM, with local fallback)
 - **Server-driven branding** — Logo, prize image, and primary color update without app releases
-- **GDPR/CCPA compliant** — Built-in consent flows, RTD opt-out, and user data deletion
+- **GDPR/CCPA compliant** — Built-in consent flows plus an RTD opt-out (`optOut()`) reachable in-app via Privacy choices → delete my data
 - **Analytics forwarding** — Route SDK events to your existing analytics stack
 
 ## Quick Start
@@ -98,14 +101,14 @@ WINR is distributed via **Swift Package Manager** and **CocoaPods**:
 
 1. **File → Add Package Dependencies…**
 2. Enter the repository URL: `https://github.com/AVAFLI/winr_ios_sdk.git`
-3. Set dependency rule to **Up to Next Major Version** from `2.5.0`
+3. Set dependency rule to **Up to Next Major Version** from `2.7.0`
 4. Add the `WINR` library to your app target
 
 ### Package.swift
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.5.0")
+    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.7.0")
 ]
 ```
 
@@ -114,7 +117,7 @@ dependencies: [
 Add the pod to your `Podfile`:
 
 ```ruby
-pod 'WINRSDK', '~> 2.3'
+pod 'WINRSDK', '~> 2.7'
 ```
 
 Then run:
@@ -250,7 +253,7 @@ The V2 experience is hardcoded to the WINR design; publishers customize exactly 
 - **Prize image** — Art for the dashboard prize card
 - **Primary color** — Accent for CTAs, streak tiles, and highlights
 
-Plus prize configuration (active giveaways, ladder, milestones) and push reminder schedules.
+Plus prize configuration (active giveaways and the daily entry ladder) and push reminder schedules.
 
 Changes apply instantly across all app installations without requiring an app update.
 
@@ -279,8 +282,6 @@ let options = WINROptions(
 - `winr_experience_opened` — The WINR experience opened (once-per-day auto-open)
 - `winr_experience_closed` — The WINR experience was dismissed
 - `winr_daily_entry_claimed` — Daily entries awarded (auto-claimed on open)
-- `winr_bonus_entry_claimed` — Bonus entries granted (e.g., streak accelerators)
-- `winr_streak_milestone` — A streak milestone was reached
 - `winr_prize_won` — The user was selected as a winner
 
 ## GDPR / CCPA
@@ -303,14 +304,18 @@ information everywhere it is held — including prize-claim records, which carry
 address and phone — links their devices together so one call covers all of them, and
 permanently silences the experience on the device so it survives a reinstall.
 
+Users can also trigger this themselves without any wiring from you: the how-it-works
+("?") screen has a **Privacy choices → delete my data** link that confirms and runs
+the same opt-out.
+
 De-identified entry records are deliberately retained. They are the evidence that a
 drawing was fair and that a prize went to a real eligible person, which a sweepstakes
 operator must be able to show; GDPR Art. 17(3) exempts data needed for legal claims.
 The person is erased, the proof is kept.
 
-> A previous `deleteAccount()` method was removed in 2.5.0. It hard-deleted entry
-> records, which both destroyed that evidence and — because it left no tombstone —
-> allowed delete-and-re-register to farm unlimited entries. Use `optOut()`.
+> `optOut()` is the only erasure API. There is no hard-delete of entry records —
+> that would both destroy the fairness evidence above and, leaving no tombstone,
+> let delete-and-re-register farm unlimited entries.
 
 
 ## API Reference
