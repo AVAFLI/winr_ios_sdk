@@ -66,7 +66,6 @@ import WINRSDK
 
 let config = WINRConfiguration(
     apiKey: "YOUR_API_KEY",
-    environment: .production,
     bundleId: "com.example.myapp",
     user: WINRUser(
         id: "user_123",

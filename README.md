@@ -33,7 +33,6 @@ import WINRSDK
 
 let config = WINRConfiguration(
     apiKey: "YOUR_API_KEY",  // debug builds: use your winr_test_ sandbox key
-    environment: .production,
     bundleId: "com.example.myapp",
     user: WINRUser(
         id: "user_123",             // only id is required — pass whatever identity you have
@@ -88,7 +87,7 @@ user: WINRUser(id: "user_123", firstName: "Jane", lastName: "Doe", email: "jane@
 ```swift
 WINR.configure(WINRConfiguration(
     apiKey: "winr_live_…",
-    environment: .production,
+    environment: .production,  // optional — defaults to .production (2.8.0+)
     bundleId: Bundle.main.bundleIdentifier!,
     user: .guest
 ))
@@ -141,7 +140,7 @@ Initialize the SDK with your user and environment settings:
 ```swift
 let config = WINRConfiguration(
     apiKey: "winr_live_xxxxxxxxxx",
-    environment: .production,
+    environment: .production,  // optional — defaults to .production (2.8.0+)
     bundleId: "com.example.myapp",
     user: WINRUser(
         id: "user_abc123",

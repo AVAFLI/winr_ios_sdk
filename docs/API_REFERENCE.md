@@ -85,7 +85,7 @@ Forward the APNs failure from `application(_:didFailToRegisterForRemoteNotificat
 public struct WINRConfiguration {
     public init(
         apiKey: String,
-        environment: WINREnvironment,
+        environment: WINREnvironment = .production,
         bundleId: String,
         user: WINRUser,
         options: WINROptions = .init()
