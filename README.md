@@ -4,7 +4,7 @@
 [![Platform](https://img.shields.io/badge/platform-iOS%2015.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange.svg)](https://swift.org)
 [![SPM](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://swift.org/package-manager/)
-[![CocoaPods](https://img.shields.io/badge/CocoaPods-2.7.0-red.svg)](https://cocoapods.org/pods/WINRSDK)
+[![CocoaPods](https://img.shields.io/badge/CocoaPods-2.8.0-red.svg)](https://cocoapods.org/pods/WINRSDK)
 
 ---
 
@@ -31,21 +31,27 @@ WINR lets you add daily-entry sweepstakes and prize experiences to your app in u
 ```swift
 import WINRSDK
 
-// 1. Configure the SDK — call once at app launch
 let config = WINRConfiguration(
-    apiKey: "YOUR_API_KEY",
+    apiKey: "YOUR_API_KEY",  // debug builds: use your winr_test_ sandbox key
     environment: .production,
     bundleId: "com.example.myapp",
     user: WINRUser(
-        id: "user_123",
+        id: "user_123",             // only id is required — pass whatever identity you have
         firstName: "Jane",
-        lastName: "Doe"
+        lastName: "Doe",
+        email: "jane@example.com"   // include it when you have it — pre-fills & locks the capture form (consent stays explicit)
+    ),
+    // Nobody signed in? use user: .guest
+    options: WINROptions(
+        logging: .error,            // use .debug while integrating
+        enablePushReminders: true   // streak reminders via YOUR Firebase project (upload the key in your dashboard)
     )
 )
 WINR.configure(config)
 
-// 2. That's it — one call, and the experience opens itself
-//    once per day on the first app-open of the day.
+// Done — the experience auto-opens once per day. No further calls needed.
+// Push reminders: forward your FCM token so they can deliver:
+//   WINR.didReceiveFCMToken(token)
 ```
 
 > **Auto-open:** After `configure(_:)`, the SDK presents the experience automatically once per calendar day (on launch and whenever the app returns to the foreground on a new day). It can be disabled remotely via the dashboard's `experience.autoOpenEnabled` kill switch; unregistered users see at most 3 auto-opens until they submit an email, and RTD opted-out users never see it.
@@ -101,14 +107,14 @@ WINR is distributed via **Swift Package Manager** and **CocoaPods**:
 
 1. **File → Add Package Dependencies…**
 2. Enter the repository URL: `https://github.com/AVAFLI/winr_ios_sdk.git`
-3. Set dependency rule to **Up to Next Major Version** from `2.7.0`
+3. Set dependency rule to **Up to Next Major Version** from `2.8.0`
 4. Add the `WINR` library to your app target
 
 ### Package.swift
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.7.0")
+    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.8.0")
 ]
 ```
 
@@ -117,7 +123,7 @@ dependencies: [
 Add the pod to your `Podfile`:
 
 ```ruby
-pod 'WINRSDK', '~> 2.7'
+pod 'WINRSDK', '~> 2.8'
 ```
 
 Then run:
@@ -185,6 +191,27 @@ WINR.configure(config)
 > screen (the common case). Pass it and that address pre-fills and locks —
 > consent is still an explicit tick inside the flow. See the three identity
 > cases above.
+
+## Test in Development: Your Sandbox Key
+
+Your publisher dashboard shows two API keys:
+
+| Key | Use it in |
+| --- | --------- |
+| `winr_live_…` | Release builds — your real giveaway |
+| `winr_test_…` | Debug/dev builds and CI — an isolated sandbox |
+
+The sandbox key hits the **same production backend** with identical behavior —
+registration, streaks, entries, the full experience — but every user and entry
+lands in a separate sandbox tenant with its own always-active test giveaway.
+That means:
+
+- Your developers and testers **can never enter (or win) your real giveaway.**
+- Sandbox usage **never counts toward your MAU** or your bill.
+- Your registered bundle IDs work with both keys automatically.
+
+Swap keys per build configuration and nothing else about your integration
+changes.
 
 ## The Experience Opens Itself
 

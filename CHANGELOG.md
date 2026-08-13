@@ -1,5 +1,11 @@
 # Changelog
 
+
+## 2.8.0 — 2026-08-13
+
+- `WINRConfiguration.environment` now defaults to `.production` — omit it; sandbox API keys (`winr_test_…`) are the supported way to test.
+- Public-repo Swift package builds standalone (conditional test target).
+- Removed a stray resource that warned in every consuming project.
 ## 2.7.0 — 2026-08-11
 
 2.7.0 — "Verify your email" soft-verification: a persistent chip on the streak

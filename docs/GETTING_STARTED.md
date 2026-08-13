@@ -32,14 +32,14 @@ The SDK uses SwiftUI for its presentation layer and requires a UIKit host app (U
    ```
    https://github.com/AVAFLI/winr_ios_sdk.git
    ```
-3. Set the dependency rule to **Up to Next Major Version** from `2.7.0`
+3. Set the dependency rule to **Up to Next Major Version** from `2.8.0`
 4. Add the `WINRSDK` library to your app target
 
 Or in `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.7.0")
+    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.8.0")
 ]
 ```
 
@@ -97,6 +97,14 @@ The auto-open is the only way the experience appears — there is no manual laun
 > prize-draw eligibility.
 
 ---
+
+## Test with Your Sandbox Key
+
+Your dashboard shows a `winr_test_…` key alongside your live key. Use it in
+debug builds: same production backend, identical behavior, but users and
+entries land in an isolated sandbox tenant — testers can never enter your real
+giveaway, and sandbox usage never counts toward MAU. Your registered bundle
+IDs work with both keys.
 
 ## Push Reminders
 

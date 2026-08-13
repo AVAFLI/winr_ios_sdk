@@ -46,8 +46,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             return id
         }()
 
-        // Load your API key from a non-committed source (e.g. an .xcconfig build setting
-        // surfaced via Info.plist, or your secrets manager) — never commit a live key.
+        // The key below is the shared DEMO key: it belongs to the "WINR Test Account"
+        // publisher and is server-side restricted to the example apps' bundle IDs, so
+        // it is safe to ship in this sample. In YOUR app, load your real key from a
+        // non-committed source (e.g. an .xcconfig build setting surfaced via
+        // Info.plist, or your secrets manager) — never commit a live production key.
         let config = WINRConfiguration(
             apiKey: "winr_live_50b1b3b801a843d5e1f99593fcad4d14",
             environment: .production,
