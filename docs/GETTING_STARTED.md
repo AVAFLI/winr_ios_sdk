@@ -48,7 +48,7 @@ dependencies: [
 Add the pod to your `Podfile` and install:
 
 ```ruby
-pod 'WINRSDK', '~> 2.7'
+pod 'WINRSDK', '~> 2.8'
 ```
 
 ```bash
