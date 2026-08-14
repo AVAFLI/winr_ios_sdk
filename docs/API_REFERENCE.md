@@ -242,7 +242,7 @@ Event-name constants emitted by the SDK:
 
 ```swift
 public enum WINRConstants {
-    public static let sdkVersion = "2.9.0"
+    public static let sdkVersion = "2.9.1"
     public static let platformOS = "iOS"
 }
 ```

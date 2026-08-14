@@ -1,6 +1,15 @@
 # Changelog
 
 
+## 2.9.1 — 2026-08-14
+
+- **Official brand share icons** — the claim flow's "Share on Social Media"
+  row (X / Facebook / Instagram / Snapchat / TikTok) now renders the official
+  WINR brand glyph set from the Figma exports, replacing the hand-drawn
+  stand-ins. Glyphs are drawn in-code from the exact SVG path data via a
+  minimal path-data parser Shape — no image assets added, sizing and share
+  behavior unchanged.
+
 ## 2.9.0 — 2026-08-14
 
 Keyboard-safe forms everywhere, a streamlined claim flow with a post-submit
