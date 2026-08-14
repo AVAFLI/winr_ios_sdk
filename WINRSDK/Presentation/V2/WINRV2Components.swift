@@ -827,3 +827,91 @@ struct WINRV2CountUpText: View {
             }
     }
 }
+
+// MARK: - Keyboard avoidance (iOS 15 floor)
+
+/// Publishes the keyboard's on-screen overlap height. The drawer's root uses
+/// `.ignoresSafeArea()` (which swallows the keyboard safe-area region), so
+/// SwiftUI's automatic avoidance never fires inside the experience — every
+/// screen with text input re-creates it manually: scroll content gets
+/// `.winrKeyboardAvoiding()` bottom padding so every field AND the CTA stay
+/// reachable, and focused fields scroll themselves into view.
+final class WINRKeyboardObserver: ObservableObject {
+    @Published private(set) var height: CGFloat = 0
+
+    private var tokens: [NSObjectProtocol] = []
+
+    init() {
+        let nc = NotificationCenter.default
+        tokens.append(nc.addObserver(
+            forName: UIResponder.keyboardWillChangeFrameNotification,
+            object: nil, queue: .main
+        ) { [weak self] note in
+            guard let self,
+                  let frame = (note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue
+            else { return }
+            // Overlap with the screen, not the raw keyboard height — a hidden
+            // keyboard reports an off-screen frame.
+            let overlap = max(0, UIScreen.main.bounds.maxY - frame.minY)
+            withAnimation(.easeOut(duration: 0.25)) { self.height = overlap }
+        })
+        tokens.append(nc.addObserver(
+            forName: UIResponder.keyboardWillHideNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            withAnimation(.easeOut(duration: 0.25)) { self.height = 0 }
+        })
+    }
+
+    deinit { tokens.forEach(NotificationCenter.default.removeObserver) }
+}
+
+/// Bottom padding equal to the keyboard overlap. Apply to SCROLL CONTENT (the
+/// VStack inside the ScrollView), so the whole page — every field and the
+/// continue/submit button — remains scrollable with the keyboard up.
+private struct WINRKeyboardAvoiding: ViewModifier {
+    @StateObject private var keyboard = WINRKeyboardObserver()
+
+    func body(content: Content) -> some View {
+        content.padding(.bottom, keyboard.height)
+    }
+}
+
+extension View {
+    func winrKeyboardAvoiding() -> some View {
+        modifier(WINRKeyboardAvoiding())
+    }
+}
+
+/// Scroll-to-focused-field plumbing: pages that own a ScrollViewReader publish
+/// a scroll action into the environment; fields call it with their own anchor
+/// id when they gain focus. The small delay lets the keyboard padding land
+/// first so the scroll target accounts for it.
+struct WINRScrollToFieldKey: EnvironmentKey {
+    static let defaultValue: (String) -> Void = { _ in }
+}
+
+extension EnvironmentValues {
+    var winrScrollToField: (String) -> Void {
+        get { self[WINRScrollToFieldKey.self] }
+        set { self[WINRScrollToFieldKey.self] = newValue }
+    }
+}
+
+enum WINRKeyboardScroll {
+    /// Shared delay before scrolling to a freshly-focused field — long enough
+    /// for the keyboard-avoidance padding to be applied, short enough to feel
+    /// immediate.
+    static let focusScrollDelay: TimeInterval = 0.3
+
+    static func scrollAction(_ proxy: ScrollViewProxy) -> (String) -> Void {
+        { id in
+            DispatchQueue.main.asyncAfter(deadline: .now() + focusScrollDelay) {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    proxy.scrollTo(id, anchor: .center)
+                }
+            }
+        }
+    }
+}

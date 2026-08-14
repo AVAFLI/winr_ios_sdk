@@ -26,6 +26,10 @@ struct DependencyContainer {
     /// Server-driven SDK config (copy, branding, rules) set by admin/publisher dashboard
     var sdkConfig: SDKConfigResponse?
 
+    /// Abandoned verification-gated adoption (from the register /
+    /// getActiveGiveaway response) — the experience re-stages it on open.
+    var adoptionPending: Bool?
+
     init(configuration: WINRConfiguration, user: WINRUser) {
         self.configuration = configuration
         self.user = user

@@ -2,15 +2,19 @@
 //  WINRV2ClaimReview.swift
 //  WINRSDK
 //
-//  Review screen — "ALMOST DONE!": the three required consent checkboxes,
-//  SUBMIT PRIZE CLAIM, and the "secure and encrypted" lock note. No step
-//  indicator (matches the SUBMIT frame).
+//  Review screen — "ALMOST DONE!" (2.9): ONE optional likeness/promo
+//  checkbox (submit is always enabled), tappable Official Rules / Privacy
+//  Policy links, SUBMIT PRIZE CLAIM, and the "secure and encrypted" lock
+//  note. No step indicator (matches the SUBMIT frame).
 //
 
 import SwiftUI
 
 struct WINRClaimReviewView: View {
     let accent: Color
+    /// Rules/privacy destination for the tappable legal links (giveaway
+    /// rulesUrl, falling back to the sdkConfig one — same as every screen).
+    let rulesUrl: String?
     @Binding var form: WINRPrizeClaimForm
     @ObservedObject var viewModel: WINRExperienceViewModel
 
@@ -18,33 +22,34 @@ struct WINRClaimReviewView: View {
         WINRClaimStepPage(
             accent: accent,
             title: "ALMOST DONE!",
-            subtitle: "Please review and agree to claim your prize.",
+            subtitle: "Please review and submit to claim your prize.",
             ctaTitle: "SUBMIT PRIZE CLAIM",
-            ctaEnabled: form.isValid,
+            // 2.9: the likeness/promo checkbox is OPTIONAL — SUBMIT is always
+            // enabled (the steps already validated their required fields).
+            ctaEnabled: true,
             ctaLoading: viewModel.isSubmittingClaim,
             onCTA: { viewModel.submitPrizeClaim(form) },
             footer: AnyView(lockNote)
         ) {
-            VStack(alignment: .leading, spacing: 32) {
-                WINRClaimConsentRow(
-                    accent: accent,
-                    isOn: $form.confirmsAccuracy,
-                    text: Text("I confirm my information is accurate.")
-                )
+            VStack(alignment: .leading, spacing: 24) {
                 WINRClaimConsentRow(
                     accent: accent,
                     isOn: $form.authorizesLikeness,
-                    text: Text("I authorize this app's publisher and its promotional partners to use my name, city, profile photo, and likeness for winner announcements and promotional purposes.")
+                    text: Text("I authorize this app's publisher and its promotional partners to use my name, city, profile photo, and likeness for winner announcements and promotional purposes. (Optional)")
                 )
-                WINRClaimConsentRow(
-                    accent: accent,
-                    isOn: $form.agreesToRules,
-                    text: Text("I agree to the ").font(WINRV2Font.inter(16))
-                        + Text("Official Rules").underline().bold()
-                        + Text(" and ")
-                        + Text("Privacy Policy").underline().bold()
-                        + Text(".")
-                )
+
+                // The rules/privacy links stay TAPPABLE (they were checkbox
+                // copy before); by submitting the user agrees — no checkbox.
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("By submitting, you agree to the")
+                        .font(WINRV2Font.inter(14))
+                        .foregroundColor(.white.opacity(0.85))
+                    HStack(spacing: 14) {
+                        legalLink("Official Rules")
+                        legalLink("Privacy Policy")
+                    }
+                }
+                .padding(.leading, 2)
             }
             .padding(.horizontal, 12)
             .padding(.top, 44)
@@ -59,6 +64,21 @@ struct WINRClaimReviewView: View {
                     .padding(.top, 8)
             }
         }
+    }
+
+    /// Underlined tappable legal link — opens the publisher's rules/privacy URL.
+    private func legalLink(_ title: String) -> some View {
+        Button {
+            if let rulesUrl, let url = URL(string: rulesUrl) {
+                UIApplication.shared.open(url)
+            }
+        } label: {
+            Text(title)
+                .font(WINRV2Font.inter(15, .bold))
+                .underline()
+                .foregroundColor(.white)
+        }
+        .buttonStyle(.plain)
     }
 
     /// Gunmetal rounded note under the CTA, accent lock + 14pt copy.

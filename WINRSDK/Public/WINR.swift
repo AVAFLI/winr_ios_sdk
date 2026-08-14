@@ -29,6 +29,10 @@ public enum WINR {
     /// Backend truth for whether this person has confirmed email + consent
     /// (drives the unregistered impression cap for auto-present).
     private static var cachedEmailConsent: Bool?
+    /// Abandoned verification-gated adoption reported by the backend
+    /// (`adoptionPending` on the register / getActiveGiveaway response). The
+    /// next experience open re-stages it (fresh code + code-entry screen).
+    private static var cachedAdoptionPending: Bool?
     /// RTD opt-out — from the backend or the local persisted flag. Once true the
     /// experience is never auto-presented and `present` refuses.
     private static var cachedOptedOut = false
@@ -278,6 +282,7 @@ public enum WINR {
         container.cachedClaimedToday = cachedClaimedToday
         container.cachedStreakDay = cachedStreakDay
         container.sdkConfig = cachedSDKConfig
+        container.adoptionPending = cachedAdoptionPending
 
         let viewModel = WINRExperienceViewModel(
             container: container,
@@ -345,6 +350,7 @@ public enum WINR {
                         cachedStreakDay = response.streakDay
                         cachedSDKConfig = response.sdkConfig
                         cachedEmailConsent = response.emailConsentStatus
+                        cachedAdoptionPending = response.adoptionPending
                         if response.optedOut == true { cachedOptedOut = true }
                         lock.unlock()
                         persistOptOutIfNeeded()
@@ -366,6 +372,7 @@ public enum WINR {
                     cachedStreakDay = response.streakDay
                     cachedSDKConfig = response.sdkConfig
                     cachedEmailConsent = response.emailConsentStatus
+                    cachedAdoptionPending = response.adoptionPending
                     if response.optedOut == true { cachedOptedOut = true }
                     lock.unlock()
                     persistOptOutIfNeeded()
@@ -409,6 +416,7 @@ public enum WINR {
             cachedClaimedToday = response.claimedToday
             cachedStreakDay = response.streakDay
             cachedSDKConfig = response.sdkConfig
+            cachedAdoptionPending = response.adoptionPending
             if response.optedOut == true { cachedOptedOut = true }
             lock.unlock()
             persistOptOutIfNeeded()
@@ -452,6 +460,14 @@ public enum WINR {
     static func markEmailConsentGranted() {
         lock.lock()
         cachedEmailConsent = true
+        lock.unlock()
+    }
+
+    /// @internal — The abandoned adoption completed (code verified); clear the
+    /// cached flag so subsequent opens in this session don't re-stage it.
+    static func clearAdoptionPending() {
+        lock.lock()
+        cachedAdoptionPending = nil
         lock.unlock()
     }
 

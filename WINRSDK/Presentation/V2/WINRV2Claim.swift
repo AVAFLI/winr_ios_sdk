@@ -29,16 +29,17 @@ struct WINRPrizeClaimForm {
     let country = "United States"
     /// JPEG base64 of the optional attached photo (already downscaled/capped).
     var photoBase64: String?
-    /// Optional "please share a little" story (step 4). Sent trimmed; nil when empty.
-    var story = ""
+    // The optional "please share a little" story no longer lives on this form:
+    // the share screen comes AFTER submit (2.9) and sends a typed story via
+    // the attachClaimStory callable instead.
 
-    /// The three "review and agree" checkboxes (Joe's ALMOST DONE! screen).
-    /// All three are REQUIRED to submit, and they default to CHECKED so the
-    /// review screen opens with SUBMIT enabled — users can still untick any
-    /// of them, which disables SUBMIT until re-checked.
-    var confirmsAccuracy = true
-    var authorizesLikeness = true
-    var agreesToRules = true
+    /// The ONE remaining review-screen checkbox (2.9): the likeness/promo
+    /// release. OPTIONAL — submit is never gated on it, and it defaults to
+    /// UNCHECKED (consent must be an affirmative act, same reasoning as the
+    /// capture screen's marketing checkbox). Sent as `promoConsentGranted`.
+    /// The old "information is accurate" and "agree to Official Rules"
+    /// checkboxes are gone; the rules/privacy links stay tappable.
+    var authorizesLikeness = false
 
     func trimmed(_ keyPath: KeyPath<WINRPrizeClaimForm, String>) -> String {
         self[keyPath: keyPath].trimmingCharacters(in: .whitespacesAndNewlines)
@@ -80,19 +81,15 @@ struct WINRPrizeClaimForm {
             && Self.isValidZip(zip)
     }
 
-    // Steps 3 (photo) and 4 (story) are fully optional — always advanceable.
+    // Step 3 (photo) is fully optional — always advanceable. The story lives
+    // on the POST-submit share screen (2.9) and never gates anything.
 
-    /// All three review-screen consents affirmed. The likeness release must be
-    /// an affirmative user action for the publicity authorization to hold up.
-    var hasAllConsents: Bool {
-        confirmsAccuracy && authorizesLikeness && agreesToRules
-    }
-
-    /// SUBMIT enables when every required field across the steps is present,
-    /// the zip is a 5-digit US code, and all three consents are affirmed.
-    /// Phone, apartment, photo, and story are optional.
+    /// SUBMIT enables when every required field across the steps is present
+    /// and the zip is a 5-digit US code. Phone, apartment, photo, story, and
+    /// the likeness/promo checkbox are all optional — the review screen's
+    /// SUBMIT is always enabled once the steps validated.
     var isValid: Bool {
-        isStep1Valid && isStep2Valid && hasAllConsents
+        isStep1Valid && isStep2Valid
     }
 
     /// "First L." — the public display name on the winner card.
@@ -180,6 +177,13 @@ struct WINRV2WinnerClaimFlow: View {
     @ObservedObject var viewModel: WINRExperienceViewModel
     let accent: Color
     let logoUrl: String?
+    let rulesUrl: String?
+    /// Publisher share link from sdkConfig (OPTIONAL) — the share screen's
+    /// social actions.
+    let shareUrl: String?
+    /// Google Places key from sdkConfig (OPTIONAL) — street-field autocomplete
+    /// on the address step. Absent → plain typing.
+    var placesApiKey: String? = nil
     let claim: PrizeClaimBlock
 
     var body: some View {
@@ -200,8 +204,22 @@ struct WINRV2WinnerClaimFlow: View {
                 WINRV2ClaimStepsFlow(
                     accent: accent,
                     logoUrl: logoUrl,
+                    rulesUrl: rulesUrl,
+                    placesApiKey: placesApiKey,
                     claim: claim,
                     viewModel: viewModel,
+                    onClose: { viewModel.requestDismiss() }
+                )
+            case .share:
+                // 2.9: "Please share a little" comes AFTER submit — the claim
+                // is already safe on the backend, so closing loses nothing.
+                WINRV2ClaimShareScreen(
+                    accent: accent,
+                    logoUrl: logoUrl,
+                    shareLine: shareLine,
+                    shareUrl: shareUrl,
+                    onStory: { viewModel.attachClaimStory($0) },
+                    onDone: { viewModel.winnerShareDone() },
                     onClose: { viewModel.requestDismiss() }
                 )
             case let .confirmation(claimNumber, submittedAt):
@@ -216,6 +234,18 @@ struct WINRV2WinnerClaimFlow: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.winnerClaimStep)
+    }
+
+    /// "I just won {prize} in {app}!" — the share screen's prefilled line.
+    private var shareLine: String {
+        let prize = WINRV2PrizeText.stripHeadline(
+            description: claim.prizeDescription,
+            value: Int(claim.prizeValue)
+        )
+        let app = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+            ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
+        if let app { return "I just won \(prize) in \(app)!" }
+        return "I just won \(prize)!"
     }
 }
 

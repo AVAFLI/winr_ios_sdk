@@ -25,39 +25,48 @@ struct WINRClaimStepPage<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 0) {
-                Text(title)
-                    .font(WINRV2Font.inter(27, .black))
-                    .kerning(-0.81)
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 24)
-                if let subtitle {
-                    Text(subtitle)
-                        .font(WINRV2Font.inter(18, .medium))
-                        .kerning(-0.54)
+        // Keyboard-aware page: the scroll CONTENT is padded by the keyboard
+        // overlap (the drawer root ignores the keyboard safe area, so SwiftUI's
+        // automatic avoidance never fires here), keeping every field and the
+        // CONTINUE/SUBMIT pill reachable with the keyboard up; focused fields
+        // scroll themselves into view via the environment scroll action.
+        ScrollViewReader { proxy in
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    Text(title)
+                        .font(WINRV2Font.inter(27, .black))
+                        .kerning(-0.81)
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)
-                        .padding(.top, 7)
-                }
+                        .padding(.top, 24)
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(WINRV2Font.inter(18, .medium))
+                            .kerning(-0.54)
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                            .padding(.top, 7)
+                    }
 
-                content
+                    content
 
-                WINRV2PillButton(accent: accent, title: ctaTitle, isLoading: ctaLoading) {
-                    onCTA()
-                }
-                .opacity(ctaEnabled ? 1 : 0.5)
-                .disabled(!ctaEnabled || ctaLoading)
-                .padding(.horizontal, 12)
-                .padding(.top, 21)
+                    WINRV2PillButton(accent: accent, title: ctaTitle, isLoading: ctaLoading) {
+                        onCTA()
+                    }
+                    .opacity(ctaEnabled ? 1 : 0.5)
+                    .disabled(!ctaEnabled || ctaLoading)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 21)
 
-                if let footer {
-                    footer
+                    if let footer {
+                        footer
+                    }
+                    Spacer(minLength: 34)
                 }
-                Spacer(minLength: 34)
+                .padding(.horizontal, 28)
+                .winrKeyboardAvoiding()
             }
-            .padding(.horizontal, 28)
+            .environment(\.winrScrollToField, WINRKeyboardScroll.scrollAction(proxy))
         }
     }
 }
@@ -73,6 +82,11 @@ struct WINRClaimStepField: View {
     /// comes from WINRV2Strings; shown by the steps on a continue attempt.
     var error: String? = nil
 
+    @FocusState private var isFocused: Bool
+    @Environment(\.winrScrollToField) private var scrollToField
+
+    private var anchorID: String { "winr-claim-field-\(label)" }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             WINRClaimStepFieldLabel(label)
@@ -82,6 +96,7 @@ struct WINRClaimStepField: View {
                 .keyboardType(keyboard)
                 .textContentType(contentType)
                 .autocorrectionDisabled()
+                .focused($isFocused)
                 .padding(.horizontal, 25)
                 .frame(height: 59)
                 .background(WINRClaimStepTheme.fieldBackground)
@@ -98,6 +113,10 @@ struct WINRClaimStepField: View {
                     .padding(.leading, 8)
                     .transition(.opacity)
             }
+        }
+        .id(anchorID)
+        .onChange(of: isFocused) { focused in
+            if focused { scrollToField(anchorID) }
         }
     }
 }

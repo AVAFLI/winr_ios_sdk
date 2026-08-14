@@ -1,6 +1,53 @@
 # Changelog
 
 
+## 2.9.0 — 2026-08-14
+
+Keyboard-safe forms everywhere, a streamlined claim flow with a post-submit
+share step, in-experience privacy choices, and adoption re-entry.
+
+- **Keyboard avoidance on every text-input screen** — email capture, code
+  entry, and every claim step (including the story editor) now keep the
+  focused field visible above the keyboard, via a shared keyboard observer
+  with scroll-content padding and scroll-to-focused-field. Root cause: the
+  drawer root's `ignoresSafeArea()` had swallowed SwiftUI's built-in
+  keyboard avoidance.
+- **Flat capture background** — the email-capture screen swaps the blue
+  radial glow for the same flat gunmetal background as the dashboard drawer.
+- **Claim review down to one checkbox** — the accuracy and rules checkboxes
+  are gone (the rules/privacy links stay tappable); what remains is a single
+  optional likeness/promo checkbox, default unchecked, with submit always
+  enabled. The choice is always sent as `promoConsentGranted`.
+- **Share step after submit** — "Please share a little" now comes after the
+  claim submits, so closing it loses nothing: a typed story rides the new
+  `attachClaimStory` callable (fire-and-forget with one retry, deduped).
+- **Social share intents** — X opens the tweet intent with prefilled text;
+  Facebook opens the sharer with the configured link (falling back to the
+  system share sheet when none is set, since the sharer ignores prefilled
+  text by design); Instagram, Snapchat, and TikTok use the system share
+  sheet with the share line — no platform gets a pretend prefill.
+- **Publisher `shareUrl`** — publishers can configure a share link that is
+  appended to the X post, drives the Facebook sharer, and rides along in the
+  system share text.
+- **Address autocomplete (optional)** — when a publisher configures
+  `sdkConfig.placesApiKey`, the claim address step's street field suggests US
+  addresses via Google Places (API New) as you type: up to 5 debounced
+  suggestions in the dark claim styling with a "powered by Google" row, and a
+  tap fills street/city/state/zip (all still hand-editable). No key → the
+  plain street field, exactly as before; any Places failure degrades silently
+  to plain typing.
+- **Zip field fix** — widened so all five digits fit past the field's inner
+  padding instead of clipping.
+- **Privacy choices surface** — delete-my-data moves off the how-it-works
+  screen into a dedicated "Privacy choices" surface (policy link + delete
+  action with the existing confirmation).
+- **Adoption re-entry** — a user who backed out of adoption mid-flow is no
+  longer dead-ended: an `adoptionPending` flag on register/getActiveGiveaway
+  triggers the new `restageAdoption` callable on open, then the code-entry
+  screen with "pick up where you left off" copy; resend re-stages too.
+- **Build fix** — removed stale `amazon.json` references from the Xcode
+  project (the file was deleted earlier but stayed in the Resources phase).
+
 ## 2.8.0 — 2026-08-13
 
 - `WINRConfiguration.environment` now defaults to `.production` — omit it; sandbox API keys (`winr_test_…`) are the supported way to test.

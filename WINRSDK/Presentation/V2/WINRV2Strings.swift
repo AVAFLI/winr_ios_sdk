@@ -39,6 +39,11 @@ enum WINRV2Strings {
     static let codeIncorrect = "That code didn't match. Check the email and try again."
     /// A failed resend keeps the code screen up with this inline error.
     static let resendFailed = "Couldn't send a new code. Check your connection and try again."
+    /// Subtitle on the code screen when an ABANDONED adoption is re-staged
+    /// (`adoptionPending` on the register response → restageAdoption re-sends
+    /// a fresh code). The SDK never stored the typed email, so the copy names
+    /// the inbox generically.
+    static let adoptionReentrySubtitle = "Let's pick up where you left off. We just sent a fresh 6-digit code to your email — enter it to finish linking your streak."
 
     // MARK: - Email verification (soft gate — dismissible, never blocks play)
 
@@ -72,8 +77,15 @@ enum WINRV2Strings {
 
     // MARK: - Privacy choices / RTD opt-out (how-it-works screen)
 
-    /// Muted entry-point link at the bottom of the how-it-works screen.
+    /// Muted entry-point link at the bottom of the how-it-works screen. Since
+    /// 2.9 it opens the Privacy choices SURFACE (policy link + delete action)
+    /// instead of jumping straight to the delete confirmation.
     static let privacyChoices = "Privacy choices"
+    /// The Privacy choices surface's policy link.
+    static let privacyPolicyLink = "Privacy Policy"
+    /// The Privacy choices surface's delete entry point (leads to the existing
+    /// destructive confirmation).
+    static let privacyDeleteAction = "Delete my data & stop participating"
     static let optOutTitle = "Delete my data & stop participating"
     static let optOutBody = "This permanently deletes your WINR data, ends your giveaway participation, and cannot be undone. You can also email info@avafli.com."
     static let optOutConfirm = "DELETE MY DATA"

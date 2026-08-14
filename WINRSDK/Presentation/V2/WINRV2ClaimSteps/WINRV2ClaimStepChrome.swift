@@ -106,27 +106,28 @@ struct WINRClaimStepHeader: View {
     }
 }
 
-/// "STEP N OF 4" + the row of 4 dots connected by lines (143×14 in the
-/// frames): filled with the accent up to the current step, outlined after it.
-/// The fill animates as the flow advances.
+/// "STEP N OF {total}" + the row of connected dots: filled with the accent up
+/// to the current step, outlined after it. The fill animates as the flow
+/// advances. Total is 3 since 2.9 (the share screen moved after submit).
 struct WINRClaimStepIndicator: View {
     let accent: Color
-    /// 1-based current step (1...4).
+    /// 1-based current step (1...total).
     let current: Int
+    var total: Int = WINRClaimFlowStep.totalFormSteps
 
     private let dotSize: CGFloat = 14
     private let lineWidth: CGFloat = 29
 
     var body: some View {
         VStack(spacing: 12) {
-            Text("STEP \(current) OF 4")
+            Text("STEP \(current) OF \(total)")
                 .font(WINRV2Font.inter(17, .semibold))
                 .kerning(-0.85)
                 .foregroundColor(.white)
             HStack(spacing: 0) {
-                ForEach(1...4, id: \.self) { index in
+                ForEach(1...total, id: \.self) { index in
                     dot(filled: index <= current)
-                    if index < 4 {
+                    if index < total {
                         Rectangle()
                             .fill(accent)
                             .frame(width: lineWidth, height: 1.5)
@@ -136,7 +137,7 @@ struct WINRClaimStepIndicator: View {
             .animation(.easeInOut(duration: 0.3), value: current)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Step \(current) of 4")
+        .accessibilityLabel("Step \(current) of \(total)")
     }
 
     private func dot(filled: Bool) -> some View {

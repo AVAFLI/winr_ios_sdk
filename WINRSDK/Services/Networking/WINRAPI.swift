@@ -55,6 +55,11 @@ struct RegisterDeviceResponse: Decodable {
     /// users with no email — only an explicit `false` counts as "unverified".
     /// Never gates play; affects prize-draw eligibility only (server-side).
     let emailVerified: Bool?
+    /// True when this device started a verification-gated adoption (typed an
+    /// existing account's email, was sent a 6-digit code) but never finished it.
+    /// The next open calls `restageAdoption` and re-shows the code screen with
+    /// "pick up where you left off" copy. OPTIONAL — absent from current prod.
+    let adoptionPending: Bool?
 }
 
 // MARK: - SDK Config (server-driven copy & branding)
@@ -68,6 +73,13 @@ struct SDKConfigResponse: Codable {
     let ageGateMinAge: Int?
     /// Experience behavior (V2 auto-open flow). Absent → SDK defaults apply.
     let experience: ExperienceConfig?
+    /// Publisher share link (app-store / landing page) used by the winner
+    /// share step's social actions. OPTIONAL — absent from current prod; the
+    /// share actions degrade to text-only when missing.
+    let shareUrl: String?
+    /// Google Places API key (Places API New) for claim-address autocomplete.
+    /// OPTIONAL — absent means the street field stays a plain text field.
+    let placesApiKey: String?
 }
 
 /// Server-driven experience behavior flags.
@@ -372,6 +384,23 @@ struct VerifyAdoptionCodeRequest: APIRequest {
     }
 }
 
+/// Re-stages an abandoned verification-gated adoption (`adoptionPending` on the
+/// register response): the backend re-sends a fresh 6-digit code to the email
+/// this device originally typed, and the SDK re-shows the code screen with
+/// "pick up where you left off" copy. Mirrors verifyAdoptionCode's envelope.
+struct RestageAdoptionRequest: APIRequest {
+    typealias Response = RestageAdoptionResponse
+    var path: String { "restageAdoption" }
+    var method: String { "POST" }
+    var body: Data? {
+        try? JSONSerialization.data(withJSONObject: ["data": [:] as [String: String]])
+    }
+}
+
+struct RestageAdoptionResponse: Decodable {
+    let sent: Bool
+}
+
 // MARK: - Email verification (soft gate)
 
 /// Confirms a freshly-typed email with the 6-digit code sent to that inbox.
@@ -557,6 +586,10 @@ struct GetActiveGiveawayResponse: Decodable {
     /// confirmation (show the "Verify your email" chip). ABSENT for verified /
     /// partner-passed / adoption-verified / no-email users. Never gates play.
     let emailVerified: Bool?
+    /// Abandoned verification-gated adoption (see RegisterDeviceResponse).
+    /// Decoded here too because an already-registered device refreshes via
+    /// getActiveGiveaway and never re-runs registerDevice. OPTIONAL.
+    let adoptionPending: Bool?
 }
 
 // MARK: - Prize Claim (winner flow)
@@ -604,7 +637,10 @@ struct SubmitPrizeClaimRequest: APIRequest {
     let zip: String
     let country: String
     let photoBase64: String?
-    let story: String?
+    /// The OPTIONAL likeness/promo checkbox on the review screen ("ALMOST
+    /// DONE!"). Always sent — submit is never gated on it (2.9 decision).
+    /// The story no longer rides this payload — see AttachClaimStoryRequest.
+    let promoConsentGranted: Bool
 
     var path: String { "submitPrizeClaim" }
     var method: String { "POST" }
@@ -618,11 +654,11 @@ struct SubmitPrizeClaimRequest: APIRequest {
             "state": state,
             "zip": zip,
             "country": country,
+            "promoConsentGranted": promoConsentGranted,
         ]
         if let phone, !phone.isEmpty { data["phone"] = phone }
         if let apt, !apt.isEmpty { data["apt"] = apt }
         if let photoBase64 { data["photoBase64"] = photoBase64 }
-        if let story, !story.isEmpty { data["story"] = story }
         return try? JSONSerialization.data(withJSONObject: ["data": data])
     }
 }
@@ -630,6 +666,24 @@ struct SubmitPrizeClaimRequest: APIRequest {
 struct SubmitPrizeClaimResponse: Decodable {
     let claimNumber: String
     let submittedAt: String   // ISO date
+}
+
+/// Attaches the optional "please share a little" story AFTER the claim was
+/// submitted (2.9 — the share step moved post-submit, so the story can no
+/// longer ride the submitPrizeClaim payload). Fire-and-forget from the SDK:
+/// a failure never blocks or surfaces — the claim itself is already safe.
+struct AttachClaimStoryRequest: APIRequest {
+    typealias Response = AttachClaimStoryResponse
+    let story: String
+    var path: String { "attachClaimStory" }
+    var method: String { "POST" }
+    var body: Data? {
+        try? JSONSerialization.data(withJSONObject: ["data": ["story": story]])
+    }
+}
+
+struct AttachClaimStoryResponse: Decodable {
+    let saved: Bool
 }
 
 // MARK: - Opt Out (RTD — Right To Delete)

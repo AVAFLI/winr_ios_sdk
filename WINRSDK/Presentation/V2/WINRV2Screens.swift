@@ -121,6 +121,24 @@ struct WINRV2ExperienceRoot: View {
                     onInfo: { viewModel.showHowItWorks() },
                     onClose: { viewModel.hideEmailVerification() }
                 )
+            case .adoptionReentry:
+                // Abandoned adoption re-entry (2.9): the backend re-sent a
+                // fresh code via restageAdoption — same code-entry screen,
+                // "pick up where you left off" copy. Verify path is identical
+                // to the normal adoption gate.
+                WINRV2CodeEntryView(
+                    accent: accent,
+                    logoUrl: logoUrl,
+                    rulesUrl: rulesUrl,
+                    email: "",
+                    subtitle: WINRV2Strings.adoptionReentrySubtitle,
+                    isVerifying: viewModel.isVerifyingCode,
+                    errorText: viewModel.codeError,
+                    onSubmit: { viewModel.submitVerificationCode($0) },
+                    onResend: { viewModel.resendRestagedAdoption() },
+                    onInfo: { viewModel.showHowItWorks() },
+                    onClose: { viewModel.requestDismiss() }
+                )
             case .emailCapture:
                 WINRV2CaptureView(
                     accent: accent,
@@ -220,6 +238,9 @@ struct WINRV2ExperienceRoot: View {
                     viewModel: viewModel,
                     accent: accent,
                     logoUrl: logoUrl,
+                    rulesUrl: rulesUrl,
+                    shareUrl: viewModel.sdkConfig?.shareUrl,
+                    placesApiKey: viewModel.sdkConfig?.placesApiKey,
                     claim: claim
                 )
             case .milestoneCelebration:
@@ -229,6 +250,7 @@ struct WINRV2ExperienceRoot: View {
                 WINRV2HowItWorksView(
                     accent: accent,
                     logoUrl: logoUrl,
+                    rulesUrl: rulesUrl,
                     day1Entries: viewModel.displayLadder.first ?? 10,
                     visitMode: viewModel.activeGiveawayConfig?.streakMode == "visit",
                     onDone: { viewModel.hideHowItWorks() },
@@ -504,10 +526,16 @@ struct WINRV2CaptureView: View {
         return nil
     }
 
+    /// Anchor id for the scroll-to-focused-email behavior.
+    private static let emailAnchor = "winr-capture-email"
+
     var body: some View {
         ZStack(alignment: .top) {
-            WINRV2TopGlow(accent: accent).ignoresSafeArea()
+            // 2.9: flat dark background — the SAME color as the streak
+            // dashboard drawer (gunmetal), replacing the old blue radial glow.
+            WINRV2Color.gunmetal.ignoresSafeArea()
 
+            ScrollViewReader { proxy in
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
                     WINRV2Header(logoUrl: logoUrl, onInfo: onInfo, onClose: onClose)
@@ -530,6 +558,7 @@ struct WINRV2CaptureView: View {
                     VStack(spacing: 14) {
                         VStack(alignment: .leading, spacing: 6) {
                             emailField
+                                .id(Self.emailAnchor)
                             if let emailError {
                                 Text(emailError)
                                     .font(WINRV2Font.inter(13))
@@ -571,6 +600,15 @@ struct WINRV2CaptureView: View {
                     }
                     .padding(.bottom, 24)
                 }
+                // Keyboard-aware: the whole page (fields + CLAIM pill) stays
+                // scrollable and reachable with the keyboard up.
+                .winrKeyboardAvoiding()
+            }
+            .onChange(of: emailFocused) { focused in
+                if focused {
+                    WINRKeyboardScroll.scrollAction(proxy)(Self.emailAnchor)
+                }
+            }
             }
         }
     }
@@ -837,12 +875,19 @@ struct WINRV2VerifyEmailChip: View {
 struct WINRV2HowItWorksView: View {
     let accent: Color
     let logoUrl: String?
+    /// Destination for the Privacy choices surface's policy link.
+    let rulesUrl: String?
     let day1Entries: Int
     var visitMode = false
     let onDone: () -> Void
     let onClose: () -> Void
-    /// The "Privacy choices" → delete-my-data flow (owned by the view model).
+    /// The delete-my-data flow (owned by the view model). Since 2.9 it is
+    /// reached through the Privacy choices SURFACE, not directly from here.
     @ObservedObject var optOut: WINRV2OptOutCoordinator
+
+    /// The intermediate "Privacy choices" surface (2.9): policy link + the
+    /// delete action. Delete-my-data no longer pops straight from this screen.
+    @State private var showPrivacyChoices = false
 
     var body: some View {
         ZStack {
@@ -887,9 +932,11 @@ struct WINRV2HowItWorksView: View {
                         .padding(.horizontal, 28)
                         .padding(.top, 20)
 
-                    // Muted privacy opt-out entry point — deliberately quiet:
-                    // present for those who look for it, invisible to the pitch.
-                    Button(action: { optOut.begin() }) {
+                    // Muted privacy entry point — deliberately quiet: present
+                    // for those who look for it, invisible to the pitch. Opens
+                    // the Privacy choices surface (2.9); the delete action
+                    // lives THERE now, behind its existing confirmation.
+                    Button(action: { showPrivacyChoices = true }) {
                         Text(WINRV2Strings.privacyChoices)
                             .font(WINRV2Font.inter(12))
                             .foregroundColor(WINRV2Color.textTertiary)
@@ -901,6 +948,11 @@ struct WINRV2HowItWorksView: View {
                 }
             }
 
+            if showPrivacyChoices, optOut.phase == .idle {
+                privacyChoicesDialog
+                    .transition(.opacity)
+            }
+
             if optOut.phase != .idle {
                 optOutDialog
                     .transition(.opacity)
@@ -908,6 +960,63 @@ struct WINRV2HowItWorksView: View {
         }
         .background(WINRV2Color.panel.ignoresSafeArea())
         .animation(.easeInOut(duration: 0.2), value: optOut.phase)
+        .animation(.easeInOut(duration: 0.2), value: showPrivacyChoices)
+    }
+
+    /// The "Privacy choices" surface: the policy link stays tappable and the
+    /// delete action leads into the EXISTING destructive confirmation.
+    private var privacyChoicesDialog: some View {
+        ZStack {
+            Color.black.opacity(0.55)
+                .ignoresSafeArea()
+                .onTapGesture { showPrivacyChoices = false }
+
+            VStack(spacing: 16) {
+                Text(WINRV2Strings.privacyChoices)
+                    .font(WINRV2Font.inter(18, .black))
+                    .foregroundColor(.white)
+
+                Button {
+                    if let rulesUrl, let url = URL(string: rulesUrl) {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Text(WINRV2Strings.privacyPolicyLink)
+                        .font(WINRV2Font.inter(15, .bold))
+                        .underline()
+                        .foregroundColor(.white)
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showPrivacyChoices = false
+                    optOut.begin()
+                } label: {
+                    Text(WINRV2Strings.privacyDeleteAction)
+                        .font(WINRV2Font.inter(15, .bold))
+                        .underline()
+                        .foregroundColor(WINRV2Color.errorRed)
+                }
+                .buttonStyle(.plain)
+
+                Button(action: { showPrivacyChoices = false }) {
+                    Text(WINRV2Strings.optOutCancel)
+                        .font(WINRV2Font.inter(14))
+                        .foregroundColor(WINRV2Color.textTertiary)
+                        .underline()
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
+            }
+            .padding(22)
+            .frame(maxWidth: 340)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(WINRV2Color.deepCharcoal)
+                    .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.white.opacity(0.12), lineWidth: 1))
+            )
+            .padding(.horizontal, 24)
+        }
     }
 
     /// The destructive confirmation (and its in-flight / failed / deleted
@@ -1010,6 +1119,9 @@ struct WINRV2CodeEntryView: View {
     let onClose: () -> Void
 
     @State private var code = ""
+    @FocusState private var codeFocused: Bool
+
+    private static let codeAnchor = "winr-code-field"
 
     private var resolvedSubtitle: String {
         subtitle ?? "This email is already part of a WINR streak. Enter the 6-digit code we sent to \(email) to pick it up on this device."
@@ -1018,6 +1130,7 @@ struct WINRV2CodeEntryView: View {
     var body: some View {
         ZStack(alignment: .top) {
             WINRV2TopGlow(accent: accent).ignoresSafeArea()
+            ScrollViewReader { proxy in
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
                     WINRV2Header(logoUrl: logoUrl, onInfo: onInfo, onClose: onClose)
@@ -1041,9 +1154,11 @@ struct WINRV2CodeEntryView: View {
                             .keyboardType(.numberPad)
                             .textContentType(.oneTimeCode)   // keyboard offers the code from Mail
                             .multilineTextAlignment(.center)
+                            .focused($codeFocused)
                             .padding(.horizontal, 20)
                             .frame(height: 54)
                             .background(RoundedRectangle(cornerRadius: 10).fill(Color.white))
+                            .id(Self.codeAnchor)
                             .onChange(of: code) { newValue in
                                 let digits = newValue.filter(\.isNumber)
                                 if digits.count > 6 { code = String(digits.prefix(6)) }
@@ -1085,6 +1200,15 @@ struct WINRV2CodeEntryView: View {
                         .padding(.bottom, 24)
                 }
                 .frame(minHeight: UIScreen.main.bounds.height * 0.6)
+                // Keyboard-aware: field, VERIFY pill, and resend link all stay
+                // reachable with the number pad up.
+                .winrKeyboardAvoiding()
+            }
+            .onChange(of: codeFocused) { focused in
+                if focused {
+                    WINRKeyboardScroll.scrollAction(proxy)(Self.codeAnchor)
+                }
+            }
             }
         }
     }

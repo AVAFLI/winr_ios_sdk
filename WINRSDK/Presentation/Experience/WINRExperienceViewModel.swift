@@ -152,6 +152,11 @@ final class WINRExperienceViewModel: ObservableObject {
         /// the adoption code screen but is DISMISSIBLE (Cancel returns to the
         /// dashboard) and never gates play — it only confirms draw eligibility.
         case emailVerification
+        /// Abandoned verification-gated adoption re-entry (2.9): the backend
+        /// reported `adoptionPending`, a fresh code was just re-sent via
+        /// `restageAdoption`, and the code screen shows with "pick up where
+        /// you left off" copy. Same verify path as `.codeEntry`.
+        case adoptionReentry
         case streak(StreakState, Int, [Int])
         case milestoneCelebration(MilestoneAward, DailyEntryGrant)
         /// Daily entries confirmation screen
@@ -169,6 +174,9 @@ final class WINRExperienceViewModel: ObservableObject {
     enum WinnerClaimStep: Equatable {
         case splash
         case form
+        /// Post-submit "Please share a little" screen (2.9) — the claim is
+        /// already on the backend, so closing here loses nothing.
+        case share(claimNumber: String, submittedAt: String)
         case confirmation(claimNumber: String, submittedAt: String)
     }
 
@@ -196,6 +204,9 @@ final class WINRExperienceViewModel: ObservableObject {
     private var cachedBackendTotalEntries: Int?
     /// One-shot guard for the "already claimed on another device" re-sync.
     private var didResyncAfterAlreadyClaimed = false
+    /// One-shot guard so a single experience open never spams restageAdoption
+    /// (load() can run more than once per session).
+    private var didAttemptAdoptionRestage = false
 
     // MARK: - Winner prize claim
 
@@ -442,6 +453,9 @@ final class WINRExperienceViewModel: ObservableObject {
             var backendClaimedToday: Bool? = container.cachedClaimedToday
             var backendStreakDay: Int? = container.cachedStreakDay
             var pendingPrizeClaim: PrizeClaimBlock?
+            // Abandoned adoption signal: seeded from the register response
+            // (via the container), refreshed by getActiveGiveaway below.
+            var backendAdoptionPending: Bool? = container.adoptionPending
 
             do {
                 let response = try await container.network.send(GetActiveGiveawayRequest())
@@ -495,6 +509,10 @@ final class WINRExperienceViewModel: ObservableObject {
                 // (verified / partner-passed / adoption-verified / no email)
                 // leaves the chip hidden. Never gates play.
                 emailUnverified = Self.showsVerifyEmailChip(emailVerified: response.emailVerified)
+
+                if let adoptionPending = response.adoptionPending {
+                    backendAdoptionPending = adoptionPending
+                }
             } catch {
                 // Backend geo-fence rejection: a dedicated state, never the
                 // generic empty state — the person needs to know WHY there is
@@ -536,6 +554,27 @@ final class WINRExperienceViewModel: ObservableObject {
                     silentDailyClaim()
                 }
                 return
+            }
+
+            // Adoption re-entry (2.9): this device typed an existing account's
+            // email, was sent a code, and never finished. Re-stage the adoption
+            // (the backend re-sends a fresh 6-digit code) and drop straight
+            // onto the code screen with "pick up where you left off" copy.
+            // One-shot per experience open; any failure falls through to the
+            // normal email-capture gate — never a dead end.
+            if backendAdoptionPending == true, !hasEmailConsent, !didAttemptAdoptionRestage {
+                didAttemptAdoptionRestage = true
+                do {
+                    let restage = try await container.network.send(RestageAdoptionRequest())
+                    if restage.sent {
+                        codeError = nil
+                        state = .adoptionReentry
+                        return
+                    }
+                    Logger.shared.log("restageAdoption declined (sent=false) — falling back to email capture", level: .info)
+                } catch {
+                    Logger.shared.log("restageAdoption failed — falling back to email capture: \(error)", level: .error)
+                }
             }
 
             // Email-capture gate: shown until the user completes the consent flow.
@@ -721,6 +760,9 @@ final class WINRExperienceViewModel: ObservableObject {
                     container.keychain.saveUUID(uuid)
                     Logger.shared.log("Adoption verified — streak unified across devices", level: .info)
                 }
+                // The adoption is complete — a restaged re-entry must not
+                // re-trigger on the next open.
+                WINR.clearAdoptionPending()
                 // The inbox is proven and the backend has the email — record
                 // consent now (submitEmail no longer pre-saves the flag).
                 recordEmailConsent(
@@ -810,6 +852,30 @@ final class WINRExperienceViewModel: ObservableObject {
                     // navigate away, so a failed resend can't strand the user.
                     self.codeError = WINRV2Strings.resendFailed
                 }
+            }
+        }
+    }
+
+    /// "Send a new code" on the adoption RE-ENTRY screen: the SDK holds no
+    /// email/consents from the abandoned session, so the resend is another
+    /// restageAdoption round-trip (the backend still knows the address). The
+    /// code screen stays up throughout; failures show inline.
+    @MainActor
+    func resendRestagedAdoption() {
+        guard !isVerifyingCode else { return }
+        isVerifyingCode = true
+        codeError = nil
+        Task { [weak self] in
+            guard let self else { return }
+            defer { Task { @MainActor in self.isVerifyingCode = false } }
+            do {
+                let response = try await container.network.send(RestageAdoptionRequest())
+                await MainActor.run {
+                    self.codeError = response.sent ? nil : WINRV2Strings.resendFailed
+                }
+            } catch {
+                Logger.shared.log("Restage adoption resend failed: \(error)", level: .error)
+                await MainActor.run { self.codeError = WINRV2Strings.resendFailed }
             }
         }
     }
@@ -1364,6 +1430,50 @@ final class WINRExperienceViewModel: ObservableObject {
         winnerClaimStep = .form
     }
 
+    /// DONE on the post-submit share screen → the confirmation screen.
+    @MainActor
+    func winnerShareDone() {
+        guard case let .share(claimNumber, submittedAt) = winnerClaimStep else { return }
+        winnerClaimStep = .confirmation(claimNumber: claimNumber, submittedAt: submittedAt)
+    }
+
+    /// One-shot guard so the story is attached at most once (the share screen
+    /// fires on DONE, close, AND disappear so a typed story is never lost).
+    private var didAttachClaimStory = false
+
+    /// Sends the post-submit "please share a little" story via the
+    /// attachClaimStory callable. FIRE-AND-FORGET with one retry: the claim is
+    /// already submitted, so a failure never blocks and never surfaces an
+    /// error. Blank stories are dropped.
+    @MainActor
+    func attachClaimStory(_ story: String) {
+        let trimmed = story.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !didAttachClaimStory else { return }
+        didAttachClaimStory = true
+        Task { [weak self] in
+            guard let self else { return }
+            for attempt in 1...2 {
+                do {
+                    let response = try await self.container.network.send(
+                        AttachClaimStoryRequest(story: trimmed)
+                    )
+                    Logger.shared.log(
+                        "Claim story attached (saved: \(response.saved))", level: .debug
+                    )
+                    return
+                } catch {
+                    Logger.shared.log(
+                        "attachClaimStory attempt \(attempt) failed: \(error)",
+                        level: attempt == 2 ? .error : .info
+                    )
+                    if attempt == 1 {
+                        try? await Task.sleep(nanoseconds: 1_500_000_000)
+                    }
+                }
+            }
+        }
+    }
+
     /// SUBMIT on the claim form. Success → confirmation screen. A backend
     /// "Not the winner"/"Already submitted" rejection falls back to the normal
     /// dashboard silently (logged); transport failures surface inline.
@@ -1391,11 +1501,15 @@ final class WINRExperienceViewModel: ObservableObject {
                     zip: form.trimmed(\.zip),
                     country: form.country,
                     photoBase64: form.photoBase64,
-                    story: form.trimmed(\.story).isEmpty ? nil : form.trimmed(\.story)
+                    // The optional likeness/promo checkbox (2.9) — always sent.
+                    // The story rides attachClaimStory AFTER submit instead.
+                    promoConsentGranted: form.authorizesLikeness
                 ))
                 isSubmittingClaim = false
                 submittedClaimForm = form
-                winnerClaimStep = .confirmation(
+                // 2.9: the share step comes AFTER submit — the claim is safe,
+                // so closing the share screen loses nothing.
+                winnerClaimStep = .share(
                     claimNumber: response.claimNumber,
                     submittedAt: response.submittedAt
                 )

@@ -3,27 +3,37 @@
 //  WINRSDK
 //
 //  Root of the stepped prize-claim form (Joe's Figma design): a persistent
-//  gold-sparkle backdrop + header + animated step indicator, with the four
+//  gold-sparkle backdrop + header + animated step indicator, with the three
 //  form steps and the review screen sliding horizontally beneath them
-//  (push left on advance, push right on back).
+//  (push left on advance, push right on back). The "Please share a little"
+//  screen moved AFTER submit (2.9) — see WINRV2ClaimShareScreen.
 //
 
 import SwiftUI
 
-/// The five screens of the stepped form. Raw value is the 1-based step number
-/// (review has no "STEP N OF 4" row, matching the SUBMIT frame).
+/// The four screens of the stepped form. Raw value is the 1-based step number
+/// (review has no "STEP N OF 3" row, matching the SUBMIT frame).
 enum WINRClaimFlowStep: Int, CaseIterable {
-    case one = 1, two, three, four, review
+    case one = 1, two, three, review
 
     var indicatorStep: Int? { self == .review ? nil : rawValue }
+
+    /// Form steps shown in the indicator (review excluded).
+    static let totalFormSteps = 3
 }
 
 struct WINRV2ClaimStepsFlow: View {
     let accent: Color
     let logoUrl: String?
+    let rulesUrl: String?
     let claim: PrizeClaimBlock
     @ObservedObject var viewModel: WINRExperienceViewModel
     let onClose: () -> Void
+
+    /// Street-field autocomplete, present only when sdkConfig.placesApiKey is
+    /// configured. Held at flow level so the service (and its URLSession use)
+    /// survives step navigation.
+    private let placesService: WINRPlacesAutocompleteService?
 
     @State private var form: WINRPrizeClaimForm
     /// The picked/taken photo, held at flow level so step 3 keeps its preview
@@ -36,12 +46,19 @@ struct WINRV2ClaimStepsFlow: View {
     init(
         accent: Color,
         logoUrl: String?,
+        rulesUrl: String?,
+        placesApiKey: String? = nil,
         claim: PrizeClaimBlock,
         viewModel: WINRExperienceViewModel,
         onClose: @escaping () -> Void
     ) {
         self.accent = accent
         self.logoUrl = logoUrl
+        self.rulesUrl = rulesUrl
+        self.placesService = placesApiKey.flatMap { key in
+            let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : WINRPlacesAutocompleteService(apiKey: trimmed)
+        }
         self.claim = claim
         self.viewModel = viewModel
         self.onClose = onClose
@@ -91,23 +108,26 @@ struct WINRV2ClaimStepsFlow: View {
                 onContinue: { go(to: .two) }
             )
         case .two:
-            WINRClaimStep2View(accent: accent, form: $form, onContinue: { go(to: .three) })
+            WINRClaimStep2View(
+                accent: accent,
+                form: $form,
+                placesService: placesService,
+                onContinue: { go(to: .three) }
+            )
         case .three:
             WINRClaimStep3View(
                 accent: accent,
                 form: $form,
                 photo: $photo,
-                onContinue: { go(to: .four) }
-            )
-        case .four:
-            WINRClaimStep4View(
-                accent: accent,
-                form: $form,
-                shareLine: shareLine,
                 onContinue: { go(to: .review) }
             )
         case .review:
-            WINRClaimReviewView(accent: accent, form: $form, viewModel: viewModel)
+            WINRClaimReviewView(
+                accent: accent,
+                rulesUrl: rulesUrl,
+                form: $form,
+                viewModel: viewModel
+            )
         }
     }
 
@@ -129,17 +149,5 @@ struct WINRV2ClaimStepsFlow: View {
             insertion: .move(edge: advancing ? .trailing : .leading),
             removal: .move(edge: advancing ? .leading : .trailing)
         )
-    }
-
-    /// Generic share-sheet line for the step-4 social buttons.
-    private var shareLine: String {
-        let prize = WINRV2PrizeText.stripHeadline(
-            description: claim.prizeDescription,
-            value: Int(claim.prizeValue)
-        )
-        let app = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
-            ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
-        if let app { return "I just won \(prize) in \(app)!" }
-        return "I just won \(prize)!"
     }
 }
