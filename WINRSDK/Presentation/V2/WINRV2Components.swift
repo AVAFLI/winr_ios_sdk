@@ -731,7 +731,11 @@ struct WINRV2LegalLinks: View {
             HStack(spacing: 8) {
                 link("OFFICIAL RULES", url: rulesUrl)
                 Circle().fill(WINRV2Color.textSecondary).frame(width: 4, height: 4)
-                link("PRIVACY POLICY", url: rulesUrl)
+                // 2.9.2: the privacy link goes to the actual privacy policy
+                // (it used to point at rulesUrl — a latent bug). No server
+                // field carries a privacy URL, so the hardcoded WINR one is
+                // the destination on every screen.
+                link("PRIVACY POLICY", url: WINRConstants.privacyURL)
             }
             if showPoweredBy {
                 Text("Powered by © WINR Media")

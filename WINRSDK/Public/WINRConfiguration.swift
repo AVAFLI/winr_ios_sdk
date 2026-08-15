@@ -11,12 +11,12 @@ import SwiftUI
 public enum WINRConstants {
     /// Single source of truth for the SDK version. MUST match `WINRSDK.podspec`
     /// (`s.version`) and the latest CHANGELOG entry. Format: `v<major>.<minor>.<patch>`.
-    public static let sdkVersion = "2.9.1"
+    public static let sdkVersion = "2.9.2"
     public static let platformOS = "iOS"
     
     // Hardcoded legal URLs — consistent across all publishers
-    static let rulesURL = "https://avafli-website.web.app/sdk/rules"
-    static let privacyURL = "https://avafli-website.web.app/sdk/privacy"
+    static let rulesURL = "https://winrmedia.com/sdk/rules"
+    static let privacyURL = "https://winrmedia.com/sdk/privacy"
 }
 
 public struct WINRConfiguration {

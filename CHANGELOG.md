@@ -1,6 +1,23 @@
 # Changelog
 
 
+## 2.9.2 — 2026-08-14
+
+- **Single legal surface on email capture** — the capture screen's legal
+  sentence now carries "Official Rules" and "Privacy Policy" as underlined
+  tappable links, and the separate OFFICIAL RULES • PRIVACY POLICY links row
+  is removed from that screen only. The "Powered by © WINR Media"
+  attribution stays; every other screen keeps its links row.
+- **Privacy Policy links now open the privacy policy** — every "Privacy
+  Policy" link (capture sentence, legal-links rows, claim review, privacy
+  choices) used to open `rulesUrl`; they now open the WINR privacy policy
+  (`https://winrmedia.com/sdk/privacy`). "Official Rules" keeps `rulesUrl`.
+- **Legal block anchored to the bottom of the capture screen** — the legal
+  sentence and attribution now sit at the drawer's bottom edge instead of
+  directly under the CLAIM button. On short screens or with the keyboard up
+  the page keeps a minimum gap and scrolls as before — no overlap with the
+  button.
+
 ## 2.9.1 — 2026-08-14
 
 - **Official brand share icons** — the claim flow's "Share on Social Media"

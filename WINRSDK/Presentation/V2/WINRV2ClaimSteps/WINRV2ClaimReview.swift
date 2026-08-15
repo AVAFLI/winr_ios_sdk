@@ -12,8 +12,9 @@ import SwiftUI
 
 struct WINRClaimReviewView: View {
     let accent: Color
-    /// Rules/privacy destination for the tappable legal links (giveaway
+    /// Official Rules destination for the tappable legal link (giveaway
     /// rulesUrl, falling back to the sdkConfig one — same as every screen).
+    /// The Privacy Policy link goes to `WINRConstants.privacyURL`.
     let rulesUrl: String?
     @Binding var form: WINRPrizeClaimForm
     @ObservedObject var viewModel: WINRExperienceViewModel
@@ -45,8 +46,9 @@ struct WINRClaimReviewView: View {
                         .font(WINRV2Font.inter(14))
                         .foregroundColor(.white.opacity(0.85))
                     HStack(spacing: 14) {
-                        legalLink("Official Rules")
-                        legalLink("Privacy Policy")
+                        legalLink("Official Rules", url: rulesUrl)
+                        // 2.9.2: the actual privacy policy, not rulesUrl.
+                        legalLink("Privacy Policy", url: WINRConstants.privacyURL)
                     }
                 }
                 .padding(.leading, 2)
@@ -66,11 +68,11 @@ struct WINRClaimReviewView: View {
         }
     }
 
-    /// Underlined tappable legal link — opens the publisher's rules/privacy URL.
-    private func legalLink(_ title: String) -> some View {
+    /// Underlined tappable legal link — opens the given destination.
+    private func legalLink(_ title: String, url: String?) -> some View {
         Button {
-            if let rulesUrl, let url = URL(string: rulesUrl) {
-                UIApplication.shared.open(url)
+            if let url, let u = URL(string: url) {
+                UIApplication.shared.open(u)
             }
         } label: {
             Text(title)

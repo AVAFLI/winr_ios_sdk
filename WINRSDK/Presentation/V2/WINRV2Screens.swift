@@ -529,12 +529,37 @@ struct WINRV2CaptureView: View {
     /// Anchor id for the scroll-to-focused-email behavior.
     private static let emailAnchor = "winr-capture-email"
 
+    /// The legal sentence with "Official Rules" and "Privacy Policy" as
+    /// underlined tappable links — the ONE legal surface on this screen since
+    /// 2.9.2 (the separate links row is gone here). "Official Rules" opens
+    /// `rulesUrl` (giveaway rulesUrl falling back to the sdkConfig one);
+    /// "Privacy Policy" opens the actual privacy policy
+    /// (`WINRConstants.privacyURL` — no server field carries one). A missing
+    /// rulesUrl leaves that phrase underlined but inert, matching the old
+    /// row's no-op behavior.
+    private var legalText: AttributedString {
+        var text = AttributedString("Your email lets us contact you if you win. By entering you agree to the Official Rules & Privacy Policy")
+        let destinations: [(phrase: String, url: URL?)] = [
+            ("Official Rules", rulesUrl.flatMap { URL(string: $0) }),
+            ("Privacy Policy", URL(string: WINRConstants.privacyURL)),
+        ]
+        for (phrase, url) in destinations {
+            guard let range = text.range(of: phrase) else { continue }
+            text[range].underlineStyle = .single
+            if let url {
+                text[range].link = url
+            }
+        }
+        return text
+    }
+
     var body: some View {
         ZStack(alignment: .top) {
             // 2.9: flat dark background — the SAME color as the streak
             // dashboard drawer (gunmetal), replacing the old blue radial glow.
             WINRV2Color.gunmetal.ignoresSafeArea()
 
+            GeometryReader { geo in
             ScrollViewReader { proxy in
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
@@ -590,16 +615,37 @@ struct WINRV2CaptureView: View {
                     }
                     .padding(.horizontal, 22)
 
+                    // Pushes the legal block to the drawer's bottom edge (the
+                    // content VStack is pinned to at least the visible height
+                    // below). On short screens or with the keyboard up the
+                    // spacer collapses to its minimum gap and the page simply
+                    // scrolls — the block never overlaps the CLAIM pill.
+                    Spacer(minLength: 24)
+
                     VStack(spacing: 3) {
-                        Text("Your email lets us contact you if you win. By entering you agree to the Official Rules & Privacy Policy")
+                        // 2.9.2: ONE legal surface on this screen — the sentence
+                        // itself carries the tappable Official Rules / Privacy
+                        // Policy links; the separate OFFICIAL RULES • PRIVACY
+                        // POLICY row is gone (capture screen only — every other
+                        // screen keeps its WINRV2LegalLinks row).
+                        Text(legalText)
                             .font(WINRV2Font.inter(12))
                             .foregroundColor(WINRV2Color.textTertiary)
+                            .tint(WINRV2Color.textTertiary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 30)
-                        WINRV2LegalLinks(rulesUrl: rulesUrl, showPoweredBy: true)
+                        Text("Powered by © WINR Media")
+                            .font(WINRV2Font.inter(12))
+                            .foregroundColor(WINRV2Color.textTertiary)
                     }
                     .padding(.bottom, 24)
                 }
+                // Bottom-anchored legal block: the content is at least as tall
+                // as the visible area, so the Spacer above the legal block can
+                // expand and pin it to the bottom. Taller-than-screen content
+                // (small devices, large type, keyboard padding) exceeds the
+                // minimum and scrolls exactly as before.
+                .frame(minHeight: geo.size.height)
                 // Keyboard-aware: the whole page (fields + CLAIM pill) stays
                 // scrollable and reachable with the keyboard up.
                 .winrKeyboardAvoiding()
@@ -608,6 +654,7 @@ struct WINRV2CaptureView: View {
                 if focused {
                     WINRKeyboardScroll.scrollAction(proxy)(Self.emailAnchor)
                 }
+            }
             }
             }
         }
@@ -977,7 +1024,8 @@ struct WINRV2HowItWorksView: View {
                     .foregroundColor(.white)
 
                 Button {
-                    if let rulesUrl, let url = URL(string: rulesUrl) {
+                    // 2.9.2: the actual privacy policy, not rulesUrl.
+                    if let url = URL(string: WINRConstants.privacyURL) {
                         UIApplication.shared.open(url)
                     }
                 } label: {

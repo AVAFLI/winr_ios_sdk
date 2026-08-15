@@ -22,7 +22,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // │                                                  │
         // │  Replace apiKey with the key from your           │
         // │  publisher dashboard at:                         │
-        // │  https://avafli-website.web.app/sdk/dashboard    │
+        // │  https://winrmedia.com/sdk/dashboard    │
         // │                                                  │
         // │  environment is production-only.                 │
         // │                                                  │
