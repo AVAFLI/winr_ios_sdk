@@ -25,7 +25,8 @@ enum WINRClaimFlowStep: Int, CaseIterable {
 struct WINRV2ClaimStepsFlow: View {
     let accent: Color
     let logoUrl: String?
-    let rulesUrl: String?
+    /// Resolved publisher/app name for the review screen's likeness copy.
+    let publisherName: String?
     let claim: PrizeClaimBlock
     @ObservedObject var viewModel: WINRExperienceViewModel
     let onClose: () -> Void
@@ -46,7 +47,7 @@ struct WINRV2ClaimStepsFlow: View {
     init(
         accent: Color,
         logoUrl: String?,
-        rulesUrl: String?,
+        publisherName: String? = nil,
         placesApiKey: String? = nil,
         claim: PrizeClaimBlock,
         viewModel: WINRExperienceViewModel,
@@ -54,7 +55,7 @@ struct WINRV2ClaimStepsFlow: View {
     ) {
         self.accent = accent
         self.logoUrl = logoUrl
-        self.rulesUrl = rulesUrl
+        self.publisherName = publisherName
         self.placesService = placesApiKey.flatMap { key in
             let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
             return trimmed.isEmpty ? nil : WINRPlacesAutocompleteService(apiKey: trimmed)
@@ -124,7 +125,7 @@ struct WINRV2ClaimStepsFlow: View {
         case .review:
             WINRClaimReviewView(
                 accent: accent,
-                rulesUrl: rulesUrl,
+                publisherName: publisherName,
                 form: $form,
                 viewModel: viewModel
             )

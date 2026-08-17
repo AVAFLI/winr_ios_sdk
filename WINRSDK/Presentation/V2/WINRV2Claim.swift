@@ -173,11 +173,36 @@ enum WINRClaimDates {
 
 // MARK: - Flow root
 
+/// Resolves the publisher/app name used in user-facing copy (the likeness
+/// checkbox, the share line): the server-fed `sdkConfig.appName` wins, else
+/// the host app's bundle display name, else nil (callers fall back to
+/// generic wording).
+enum WINRV2PublisherName {
+    static func resolve(sdkAppName: String?, host: String? = hostAppName()) -> String? {
+        if let name = sdkAppName?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
+            return name
+        }
+        if let host = host?.trimmingCharacters(in: .whitespacesAndNewlines), !host.isEmpty {
+            return host
+        }
+        return nil
+    }
+
+    /// The host app's user-visible name (Info.plist display name, falling
+    /// back to the bundle name).
+    static func hostAppName() -> String? {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+            ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
+    }
+}
+
 struct WINRV2WinnerClaimFlow: View {
     @ObservedObject var viewModel: WINRExperienceViewModel
     let accent: Color
     let logoUrl: String?
-    let rulesUrl: String?
+    /// Publisher/app display name from sdkConfig (OPTIONAL) — the review
+    /// screen's likeness copy. Absent → host app's bundle display name.
+    let appName: String?
     /// Publisher share link from sdkConfig (OPTIONAL) — the share screen's
     /// social actions.
     let shareUrl: String?
@@ -204,7 +229,7 @@ struct WINRV2WinnerClaimFlow: View {
                 WINRV2ClaimStepsFlow(
                     accent: accent,
                     logoUrl: logoUrl,
-                    rulesUrl: rulesUrl,
+                    publisherName: WINRV2PublisherName.resolve(sdkAppName: appName),
                     placesApiKey: placesApiKey,
                     claim: claim,
                     viewModel: viewModel,
@@ -242,8 +267,7 @@ struct WINRV2WinnerClaimFlow: View {
             description: claim.prizeDescription,
             value: Int(claim.prizeValue)
         )
-        let app = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
-            ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
+        let app = WINRV2PublisherName.hostAppName()
         if let app { return "I just won \(prize) in \(app)!" }
         return "I just won \(prize)!"
     }
@@ -295,6 +319,8 @@ private struct WINRClaimHeader: View {
 }
 
 /// Dark info card with a leading icon (shield/mail) — splash + confirmation.
+/// 2.9.3: SOLID gunmetal-family card with a subtle border (Joe's frames
+/// 5369:5594 / 5386:5807), replacing the translucent gray wash.
 private struct WINRClaimInfoCard<Icon: View, Content: View>: View {
     @ViewBuilder let icon: Icon
     @ViewBuilder let content: Content
@@ -309,7 +335,11 @@ private struct WINRClaimInfoCard<Icon: View, Content: View>: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.08))
+                .fill(WINRV2Color.gunmetal)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.white.opacity(0.12), lineWidth: 1)
         )
         .padding(.horizontal, 22)
     }
@@ -323,6 +353,11 @@ struct WINRV2WinnerSplashView: View {
     let prizeHeadline: String
     let onContinue: () -> Void
     let onClose: () -> Void
+
+    /// One-shot: the confetti-burst GIF plays over the screen on mount (the
+    /// you-won beat), then removes itself — matching the other SDKs, which
+    /// all play drift + burst on the splash.
+    @State private var bursting = true
 
     var body: some View {
         ZStack {
@@ -394,6 +429,21 @@ struct WINRV2WinnerSplashView: View {
                         .padding(.bottom, 30)
                 }
             }
+            // Joe's dedicated Confetti overlay on the winner splash (frame
+            // 5369:5594): the V2 celebration emitter falling over the whole
+            // screen from appear. Decorative only — the Canvas never
+            // intercepts touches (`allowsHitTesting(false)` in the emitter).
+            // (The frame's "WINR MEDIA PRIZE CLAIM" caption was a canvas
+            // label under the mock, NOT part of the UI — no bottom bar here.)
+            .overlay(WINRV2ConfettiView(style: .celebration, count: 32, speed: 0.85))
+            .overlay {
+                if bursting {
+                    WINRV2GifView("confetti-burst", onFinished: { bursting = false })
+                        .frame(width: 280, height: 280)
+                        .allowsHitTesting(false)
+                        .transition(.opacity)
+                }
+            }
         }
     }
 
@@ -422,6 +472,10 @@ struct WINRV2ClaimConfirmationView: View {
     let claimNumber: String
     let submittedAt: String
     let onDone: () -> Void
+
+    /// One-shot: the confetti-burst GIF plays over the screen on mount (the
+    /// submitted-claim beat), then removes itself.
+    @State private var bursting = true
 
     private enum Gold {
         static let text = Color(red: 0.72, green: 0.55, blue: 0.16)
@@ -492,6 +546,20 @@ struct WINRV2ClaimConfirmationView: View {
                         .padding(.bottom, 34)
                 }
             }
+            // Same celebration treatment as the winner splash (Joe's frame
+            // 5386:5807): the drifting confetti field, plus a one-shot
+            // confetti-burst GIF on mount (prewarmed at the experience root).
+            // Decorative only — neither layer intercepts touches. (The frame's
+            // "WINR MEDIA PRIZE CLAIM" caption is a canvas label, not UI.)
+            .overlay(WINRV2ConfettiView(style: .celebration, count: 32, speed: 0.85))
+            .overlay {
+                if bursting {
+                    WINRV2GifView("confetti-burst", onFinished: { bursting = false })
+                        .frame(width: 280, height: 280)
+                        .allowsHitTesting(false)
+                        .transition(.opacity)
+                }
+            }
         }
     }
 
@@ -505,7 +573,10 @@ struct WINRV2ClaimConfirmationView: View {
                 Text("WINNER").kerning(0.5)
             }
             .font(WINRV2Font.inter(16, .black))
-            .foregroundColor(Gold.text)
+            // 2.9.3: publisher PRIMARY accent (Joe's frame 5386:5807 —
+            // Solitaire-branded, orange = accent). The card's gold body,
+            // border, and award line stay gold.
+            .foregroundColor(accent)
             .padding(.horizontal, 26)
             .padding(.top, 18)
 

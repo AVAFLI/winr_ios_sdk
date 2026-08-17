@@ -68,6 +68,10 @@ struct SDKConfigResponse: Codable {
     let branding: SDKBrandingConfig?
     let copy: SDKCopyConfig?
     let media: SDKMediaConfig?  // NEW
+    /// Publisher/app display name (server-fed). Used wherever copy names the
+    /// publisher — e.g. the claim review's likeness checkbox. OPTIONAL —
+    /// absent falls back to the host app's bundle display name.
+    let appName: String?
     let rulesUrl: String?
     let ageGateEnabled: Bool?
     let ageGateMinAge: Int?

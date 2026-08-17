@@ -56,6 +56,17 @@ struct WINRV2Accent {
             blue: Double(v & 0xFF) / 255
         )
     }
+
+    /// White or near-black (gunmetal) — whichever contrasts against `accent`.
+    /// Used for marks drawn ON an accent-filled surface (e.g. the capture
+    /// screen's checkbox check) so a light publisher primary doesn't produce
+    /// a white-on-white check. Relative-luminance cut at 0.6.
+    static func contrastingMark(on accent: Color) -> Color {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard UIColor(accent).getRed(&r, green: &g, blue: &b, alpha: &a) else { return .white }
+        let luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+        return luminance > 0.6 ? WINRV2Color.gunmetal : .white
+    }
 }
 
 // MARK: - Fonts (Inter + Oswald, bundled)

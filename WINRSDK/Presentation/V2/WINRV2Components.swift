@@ -83,24 +83,8 @@ struct WINRV2Header: View {
     }
 }
 
-/// The radial primary-color glow that bleeds from the top of the drawer into gunmetal.
-struct WINRV2TopGlow: View {
-    let accent: Color
-    var body: some View {
-        RadialGradient(
-            stops: [
-                .init(color: accent, location: 0),
-                .init(color: accent.opacity(0.55), location: 0.35),
-                .init(color: WINRV2Color.gunmetal.opacity(0.9), location: 0.8),
-                .init(color: WINRV2Color.gunmetal, location: 1),
-            ],
-            center: .top,
-            startRadius: 0,
-            endRadius: 440
-        )
-        .opacity(0.9)
-    }
-}
+// (WINRV2TopGlow removed in 2.9.3 — every screen now uses the flat gunmetal
+// drawer background; the last user was the adoption code-entry screen.)
 
 // MARK: - Prize presentation
 

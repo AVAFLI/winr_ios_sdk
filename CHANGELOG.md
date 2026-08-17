@@ -1,6 +1,46 @@
 # Changelog
 
 
+## 2.9.3 — 2026-08-17
+
+- **Claim review drops the legal sentence** — the "By submitting, you agree
+  to the / Official Rules / Privacy Policy" sentence and its links are
+  removed from the "ALMOST DONE!" review screen entirely (Ryan's call,
+  Joe's updated Figma). The screen now carries only the optional likeness
+  checkbox, SUBMIT, and the "secure and encrypted" note. Other screens'
+  legal links are unchanged.
+- **Likeness checkbox names the actual publisher** — "I authorize
+  {publisher} and its promotional partners…" instead of "this app's
+  publisher". The name comes from the new server-fed `sdkConfig.appName`,
+  falling back to the host app's bundle display name (same source as the
+  share line), and only then to the old generic wording.
+- **Winner splash confetti** — the CONGRATULATIONS splash now plays the
+  V2 celebration confetti emitter over the whole screen on appear (Joe's
+  dedicated Confetti overlay, frame 5369:5594) plus a one-shot
+  confetti-burst on mount, matching Android / Flutter / web. Both layers
+  are non-blocking.
+- **Blue top glow gone from every screen** — the radial primary-color
+  top glow (`WINRV2TopGlow`) is removed from its last remaining screen,
+  the adoption code-entry ("CHECK YOUR EMAIL"), which now uses the same
+  flat gunmetal drawer background the capture screen got in 2.9.0. The
+  now-unused component is deleted. The winner-flow gold sparkle prize
+  art is content, not the gradient — untouched.
+- **Claim confirmation matches Joe's frame (5386:5807)** — the
+  "YOUR PRIZE CLAIM HAS BEEN SUBMITTED" screen now plays the celebration
+  confetti on appearance (drifting field + one-shot burst, non-blocking);
+  the "3-5 Business Days" card is a solid gunmetal card with a subtle
+  border (shared with the splash's info card) instead of translucent
+  gray, with the envelope ring and "3-5 Business Days" in the publisher
+  primary accent (already accent-tokened); and the gold winner card's
+  OFFICIAL / WINNER labels render in the publisher primary accent — the
+  card's gold body and typography stay.
+- **Capture screen brand tinting** — in "VISIT. EARN. WIN." the word
+  "EARN." (with its period) now renders in the publisher's primary brand
+  color; and both checkboxes (18+ confirm, marketing consent) are tinted
+  the primary color — checked is a primary-filled box with a contrasting
+  check (white or dark, picked by luminance), unchecked keeps a
+  primary-tinted outline.
+
 ## 2.9.2 — 2026-08-14
 
 - **Single legal surface on email capture** — the capture screen's legal

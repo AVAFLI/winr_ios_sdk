@@ -238,7 +238,7 @@ struct WINRV2ExperienceRoot: View {
                     viewModel: viewModel,
                     accent: accent,
                     logoUrl: logoUrl,
-                    rulesUrl: rulesUrl,
+                    appName: viewModel.sdkConfig?.appName,
                     shareUrl: viewModel.sdkConfig?.shareUrl,
                     placesApiKey: viewModel.sdkConfig?.placesApiKey,
                     claim: claim
@@ -567,7 +567,12 @@ struct WINRV2CaptureView: View {
                         .padding(.top, 18)
 
                     VStack(spacing: 4) {
-                        Text("VISIT. EARN. WIN.")
+                        // 2.9.3: "EARN." (with its period) renders in the
+                        // publisher's PRIMARY brand color; "VISIT." and
+                        // "WIN." stay white (Joe's Figma). The segments
+                        // without an explicit color inherit the VStack's
+                        // white below.
+                        (Text("VISIT. ") + Text("EARN.").foregroundColor(accent) + Text(" WIN."))
                             .font(WINRV2Font.inter(40, .black))
                             .kerning(-1.2)
                             .lineLimit(1)
@@ -666,9 +671,22 @@ struct WINRV2CaptureView: View {
     private func checkbox(_ label: String, isOn: Bool, toggle: @escaping () -> Void) -> some View {
         Button(action: toggle) {
             HStack(spacing: 10) {
-                Image(systemName: isOn ? "checkmark.square.fill" : "square")
-                    .font(.system(size: 20))
-                    .foregroundColor(.white)
+                // 2.9.3: publisher-primary tint (Joe's Figma) — checked is an
+                // accent-filled box with a contrasting check mark; unchecked
+                // keeps an accent-tinted outline.
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(isOn ? accent : Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(accent.opacity(isOn ? 1 : 0.8), lineWidth: 1.5)
+                    )
+                    .overlay(
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(WINRV2Accent.contrastingMark(on: accent))
+                            .opacity(isOn ? 1 : 0)
+                    )
+                    .frame(width: 20, height: 20)
                 Text(label)
                     .font(WINRV2Font.inter(14))
                     .foregroundColor(.white)
@@ -677,6 +695,7 @@ struct WINRV2CaptureView: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isOn ? [.isSelected] : [])
     }
 
     /// PRIZE-derived white strip (Joe's Day-1 examples):
@@ -1177,7 +1196,10 @@ struct WINRV2CodeEntryView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            WINRV2TopGlow(accent: accent).ignoresSafeArea()
+            // 2.9.3: flat dark background — same as the capture screen and
+            // streak dashboard (gunmetal), replacing the last remaining blue
+            // radial top glow (Ryan: gone from EVERY screen).
+            WINRV2Color.gunmetal.ignoresSafeArea()
             ScrollViewReader { proxy in
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
