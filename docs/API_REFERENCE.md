@@ -46,8 +46,9 @@ Right-to-Delete opt-out: tombstones the person on the backend (identity-wide, PI
 **Throws:** `WINRError.notConfigured`, `WINRError.authenticationRequired`.
 
 `optOut()` is the only erasure API — there is no hard-delete method. Users can
-also invoke it themselves from the in-app **Privacy choices → delete my data**
-link on the how-it-works ("?") screen.
+also invoke it themselves in-app: the Privacy Policy (every legal link opens it
+in an in-app webview) contains a **Delete my data & stop participating** section
+that confirms and runs the same opt-out.
 
 ---
 
@@ -242,7 +243,7 @@ Event-name constants emitted by the SDK:
 
 ```swift
 public enum WINRConstants {
-    public static let sdkVersion = "2.9.3"
+    public static let sdkVersion = "2.9.5"
     public static let platformOS = "iOS"
 }
 ```

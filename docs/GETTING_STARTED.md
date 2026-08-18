@@ -32,14 +32,14 @@ The SDK uses SwiftUI for its presentation layer and requires a UIKit host app (U
    ```
    https://github.com/AVAFLI/winr_ios_sdk.git
    ```
-3. Set the dependency rule to **Up to Next Major Version** from `2.9.0`
+3. Set the dependency rule to **Up to Next Major Version** from `2.9.5`
 4. Add the `WINRSDK` library to your app target
 
 Or in `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.9.0")
+    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.9.5")
 ]
 ```
 
@@ -155,7 +155,7 @@ Route SDK events to your analytics stack by passing an `AnalyticsAdapter` in `WI
 ## Privacy (GDPR / CCPA)
 
 - `try await WINR.optOut()` — Right-to-Delete opt-out: tombstones the person on the backend (identity-wide, PII scrubbed, survives reinstall) and permanently silences the experience on this device. Wire this to the opt-out action in your privacy-policy flow if you have one.
-- Users can also delete their own data in-experience: the how-it-works ("?") screen has a **Privacy choices → delete my data** link that confirms and performs the same opt-out.
+- Users can also delete their own data in-experience: the Privacy Policy — which every legal link (Official Rules • Privacy Policy rows, capture-screen links) opens in an in-app webview — contains a **Delete my data & stop participating** section that confirms and performs the same opt-out.
 - `optOut()` is the only erasure API — there is no hard-delete of entry records, which would leave no tombstone and enable same-day entry farming.
 
 ---

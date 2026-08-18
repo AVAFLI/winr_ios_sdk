@@ -139,9 +139,9 @@ Task {
 }
 ```
 
-Users can also run the same opt-out themselves, no wiring required, via the
-in-app **Privacy choices → delete my data** link on the how-it-works ("?")
-screen.
+Users can also run the same opt-out themselves, no wiring required: the
+Privacy Policy opens in an in-app webview from any legal link, and its
+**Delete my data & stop participating** section confirms and runs it.
 
 ---
 
