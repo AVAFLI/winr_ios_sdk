@@ -4,7 +4,7 @@
 [![Platform](https://img.shields.io/badge/platform-iOS%2015.0%2B-blue.svg)](https://developer.apple.com/ios/)
 [![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange.svg)](https://swift.org)
 [![SPM](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://swift.org/package-manager/)
-[![CocoaPods](https://img.shields.io/badge/CocoaPods-2.9.3-red.svg)](https://cocoapods.org/pods/WINRSDK)
+[![CocoaPods](https://img.shields.io/badge/CocoaPods-2.9.4-red.svg)](https://cocoapods.org/pods/WINRSDK)
 
 ---
 
@@ -106,14 +106,14 @@ WINR is distributed via **Swift Package Manager** and **CocoaPods**:
 
 1. **File → Add Package Dependencies…**
 2. Enter the repository URL: `https://github.com/AVAFLI/winr_ios_sdk.git`
-3. Set dependency rule to **Up to Next Major Version** from `2.9.3`
+3. Set dependency rule to **Up to Next Major Version** from `2.9.4`
 4. Add the `WINR` library to your app target
 
 ### Package.swift
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.9.3")
+    .package(url: "https://github.com/AVAFLI/winr_ios_sdk.git", from: "2.9.4")
 ]
 ```
 

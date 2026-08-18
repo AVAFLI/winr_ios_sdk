@@ -1,6 +1,36 @@
 # Changelog
 
 
+## 2.9.4 — 2026-08-18
+
+- **Legal pages open in-app** — Official Rules and Privacy Policy now
+  present inside the experience in a WKWebView sheet (gunmetal chrome,
+  slim title header with an X, loading spinner, retryable error state)
+  instead of kicking the user out to Safari. Every legal link routes
+  there: the capture sentence's inline links, the OFFICIAL RULES •
+  PRIVACY POLICY rows (dashboard, code entry), and the how-it-works
+  privacy entry point. Rules loads the giveaway/sdkConfig `rulesUrl`;
+  Privacy loads the WINR privacy URL with `?app=1` appended (built with
+  URLComponents, so a base URL already carrying a query is extended
+  correctly).
+- **Delete-my-data moves into the privacy page** — loaded with `?app=1`,
+  winrmedia.com/sdk/privacy renders its own delete section; using it
+  navigates to `winr://delete`, which the SDK intercepts in the
+  webview's navigation delegate (no URL-scheme registration required of
+  the host app) and hands to the EXISTING destructive opt-out
+  confirmation + authenticated erasure. The confirmation dialog now
+  renders at the experience root so the bridge can raise it from any
+  screen. The intermediate native "Privacy choices" dialog (policy link
+  + red delete) is deleted; the muted "Privacy choices" entry point on
+  how-it-works stays and now opens the Privacy Policy webview directly.
+- **Share-link UTM tagging** — when the publisher's `shareUrl` is included
+  in a share action, the SDK appends `utm_source={network}&utm_medium=winr_share`
+  ({network} = x | facebook | instagram | snapchat | tiktok, per the tapped
+  button; system-share-sheet paths keep their network's value). Built with
+  URLComponents so URLs with existing query strings are extended correctly,
+  and a shareUrl that already carries a `utm_source` param is left untouched
+  (publisher tagging wins). Share-text URLs only — nothing else changes.
+
 ## 2.9.3 — 2026-08-17
 
 - **Claim review drops the legal sentence** — the "By submitting, you agree

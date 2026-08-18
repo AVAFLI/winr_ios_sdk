@@ -43,8 +43,10 @@ struct WINRV2DashboardNotice: Equatable {
     let showsRetry: Bool
 }
 
-/// Drives the "Privacy choices" → "Delete my data & stop participating" flow
-/// on the how-it-works screen. A tiny state machine, split out from the view
+/// Drives the "Delete my data & stop participating" flow. Since 2.9.4 it is
+/// raised by the privacy webview's `winr://delete` bridge (the privacy page,
+/// loaded with ?app=1, carries the delete section); the confirmation renders
+/// at the experience root. A tiny state machine, split out from the view
 /// model so the transitions are exercisable on their own with a stubbed
 /// opt-out action:
 ///
@@ -89,7 +91,8 @@ final class WINRV2OptOutCoordinator: ObservableObject {
         self.dismissExperience = dismissExperience
     }
 
-    /// "Privacy choices" tapped — raise the confirmation.
+    /// Delete requested (the privacy webview's winr://delete bridge) — raise
+    /// the confirmation.
     func begin() {
         if case .idle = phase { phase = .confirming }
     }
@@ -353,9 +356,10 @@ final class WINRExperienceViewModel: ObservableObject {
         NotificationCenter.default.post(name: .winrCloseRequested, object: nil)
     }
 
-    /// The "Privacy choices" → delete-my-data flow on the how-it-works screen.
-    /// On confirm it performs the real RTD opt-out (`WINR.optOut()`), holds the
-    /// success state a beat, then dismisses the whole experience.
+    /// The delete-my-data flow (raised by the privacy webview's winr://delete
+    /// bridge; confirmation rendered at the experience root). On confirm it
+    /// performs the real RTD opt-out (`WINR.optOut()`), holds the success
+    /// state a beat, then dismisses the whole experience.
     lazy var optOutCoordinator = WINRV2OptOutCoordinator(
         action: { try await WINR.optOut() },
         dismissExperience: { [weak self] in self?.requestDismiss() }

@@ -164,6 +164,9 @@ struct WINRClaimShareView: View {
 enum WINRShareActions {
 
     static func share(kind: WINRSocialGlyph.Kind, text: String, shareUrl: String?) {
+        // UTM-tag the publisher link with the tapped network so publishers can
+        // attribute installs per network (system-share-sheet paths included).
+        let shareUrl = taggedShareUrl(shareUrl, network: utmSource(for: kind))
         switch kind {
         case .x:
             // X supports prefilled text via the tweet intent URL.
@@ -186,6 +189,33 @@ enum WINRShareActions {
             // system share sheet with the text + link is the honest path.
             presentSystemShare(text: text, shareUrl: shareUrl)
         }
+    }
+
+    /// utm_source value for the tapped network.
+    static func utmSource(for kind: WINRSocialGlyph.Kind) -> String {
+        switch kind {
+        case .x: return "x"
+        case .facebook: return "facebook"
+        case .instagram: return "instagram"
+        case .snapchat: return "snapchat"
+        case .tiktok: return "tiktok"
+        }
+    }
+
+    /// Appends `utm_source={network}&utm_medium=winr_share` to the publisher's
+    /// shareUrl via URLComponents (correct whether or not the URL already has
+    /// a query string). A URL that already carries `utm_source` is returned
+    /// untouched — the publisher's own tagging wins. Unparseable URLs pass
+    /// through unchanged.
+    static func taggedShareUrl(_ shareUrl: String?, network: String) -> String? {
+        guard let shareUrl, !shareUrl.isEmpty,
+              var components = URLComponents(string: shareUrl) else { return shareUrl }
+        var items = components.queryItems ?? []
+        guard !items.contains(where: { $0.name == "utm_source" }) else { return shareUrl }
+        items.append(URLQueryItem(name: "utm_source", value: network))
+        items.append(URLQueryItem(name: "utm_medium", value: "winr_share"))
+        components.queryItems = items
+        return components.url?.absoluteString ?? shareUrl
     }
 
     /// https://twitter.com/intent/tweet?text={encoded} — URLComponents does

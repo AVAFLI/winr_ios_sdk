@@ -46,23 +46,22 @@ struct ContentView: View {
             }
             
             VStack(spacing: 40) {
-                // AVAFLI Logo Section (with fallback & debug)
+                // WINR MEDIA Logo Section (with fallback & debug)
                 Group {
                     if logoIsLoaded {
-                        // Loaded PNG
-                        // Works 100% with loose PNG files in the bundle
-                        Image(uiImage: UIImage(named: "avafli-logo") ?? UIImage())
+                        // Loaded from the asset catalog ("winrmedia-logo")
+                        Image(uiImage: UIImage(named: "winrmedia-logo") ?? UIImage())
                             .resizable()
                             .scaledToFit()
-                            .frame(height: 120)
+                            .frame(maxWidth: 300)
                             .padding(.top, 80)
                             .scaleEffect(isAnimating ? 1.0 : 0.8)
                             .opacity(isAnimating ? 1.0 : 0.5)
                             .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: isAnimating)
                     } else {
                         // Fallback: Styled text logo
-                        Text("AVAFLI")
-                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                        Text("WINR MEDIA")
+                            .font(.system(size: 36, weight: .bold, design: .rounded))
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: [.white, Color(hex: "#7c3aed")],
@@ -192,7 +191,7 @@ struct ContentView: View {
                 .animation(.easeOut(duration: 1.0).delay(1.4), value: isAnimating)
 
                 Spacer()
-                Text("© 2026 AVAFLI, LLC. • WINR™ • All rights reserved.")
+                Text("© 2026 WINR MEDIA • All rights reserved.")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
@@ -201,11 +200,11 @@ struct ContentView: View {
         }
         .onAppear {
             // Debug logo loading
-            if let path = Bundle.main.path(forResource: "avafli-logo", ofType: "png") {
-                print("✅ AVAFLI PNG found: \(path)")
+            if UIImage(named: "winrmedia-logo") != nil {
+                print("✅ WINR MEDIA logo found in asset catalog")
                 logoIsLoaded = true
             } else {
-                print("❌ AVAFLI PNG not found! Check: 1) Exact name 'avafli-logo.png', 2) Target membership, 3) Clean build.")
+                print("❌ WINR MEDIA logo not found! Check: 1) Asset name 'winrmedia-logo', 2) Target membership, 3) Clean build.")
                 logoIsLoaded = false
             }
             isAnimating = true

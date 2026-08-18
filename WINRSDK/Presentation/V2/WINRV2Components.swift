@@ -710,6 +710,11 @@ struct WINRV2LegalLinks: View {
     let rulesUrl: String?
     var showPoweredBy = false
 
+    /// 2.9.4: taps route through the environment action — the experience
+    /// root intercepts the two legal URLs and presents them in the in-app
+    /// legal webview sheet instead of Safari.
+    @Environment(\.openURL) private var openURL
+
     var body: some View {
         VStack(spacing: 3) {
             HStack(spacing: 8) {
@@ -731,7 +736,7 @@ struct WINRV2LegalLinks: View {
 
     @ViewBuilder private func link(_ title: String, url: String?) -> some View {
         Button {
-            if let url, let u = URL(string: url) { UIApplication.shared.open(u) }
+            if let url, let u = URL(string: url) { openURL(u) }
         } label: {
             Text(title)
                 .font(WINRV2Font.inter(12))

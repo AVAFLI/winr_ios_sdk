@@ -28,6 +28,9 @@ struct WINRV2ExperienceRoot: View {
 
     @State private var drawerAppeared = false
     @State private var showWinnerModal = false
+    /// The in-app legal webview (2.9.4): every Official Rules / Privacy
+    /// Policy link in the experience presents here instead of Safari.
+    @State private var legalSheet: WINRV2LegalSheet?
 
     var body: some View {
         GeometryReader { geo in
@@ -48,10 +51,42 @@ struct WINRV2ExperienceRoot: View {
                     }
                     .transition(.opacity)
                 }
+
+                // Delete-my-data destructive confirmation. Mounted at the
+                // ROOT (2.9.4) so the privacy webview's winr://delete bridge
+                // can raise it from any screen; renders nothing while idle.
+                WINRV2OptOutDialog(optOut: viewModel.optOutCoordinator)
             }
             .animation(.spring(response: 0.45, dampingFraction: 0.9), value: drawerAppeared)
         }
         .ignoresSafeArea()
+        // 2.9.4: EVERY legal link in the experience — the capture sentence's
+        // AttributedString links, the OFFICIAL RULES • PRIVACY POLICY rows,
+        // and the how-it-works privacy entry point — funnels through this
+        // handler and opens IN-APP in the legal webview sheet instead of
+        // Safari. Non-legal URLs keep the system behavior.
+        .environment(\.openURL, OpenURLAction { url in
+            if let sheet = WINRV2LegalRouting.sheet(for: url, rulesUrl: rulesUrl) {
+                legalSheet = sheet
+                return .handled
+            }
+            return .systemAction
+        })
+        .sheet(item: $legalSheet) { sheet in
+            WINRV2LegalWebView(
+                sheet: sheet,
+                accent: accent,
+                onClose: { legalSheet = nil },
+                onDeleteRequested: {
+                    // The privacy page's delete section navigated to
+                    // winr://delete: drop the sheet and raise the EXISTING
+                    // destructive confirmation (rendered at this root, so it
+                    // survives the sheet dismissing beneath it).
+                    legalSheet = nil
+                    viewModel.optOutCoordinator.begin()
+                }
+            )
+        }
         .onAppear {
             drawerAppeared = true
             // Decode the confetti-burst GIF off-main NOW so mounting it at the
@@ -250,12 +285,10 @@ struct WINRV2ExperienceRoot: View {
                 WINRV2HowItWorksView(
                     accent: accent,
                     logoUrl: logoUrl,
-                    rulesUrl: rulesUrl,
                     day1Entries: viewModel.displayLadder.first ?? 10,
                     visitMode: viewModel.activeGiveawayConfig?.streakMode == "visit",
                     onDone: { viewModel.hideHowItWorks() },
-                    onClose: { viewModel.requestDismiss() },
-                    optOut: viewModel.optOutCoordinator
+                    onClose: { viewModel.requestDismiss() }
                 )
             }
         }
@@ -534,9 +567,11 @@ struct WINRV2CaptureView: View {
     /// 2.9.2 (the separate links row is gone here). "Official Rules" opens
     /// `rulesUrl` (giveaway rulesUrl falling back to the sdkConfig one);
     /// "Privacy Policy" opens the actual privacy policy
-    /// (`WINRConstants.privacyURL` — no server field carries one). A missing
-    /// rulesUrl leaves that phrase underlined but inert, matching the old
-    /// row's no-op behavior.
+    /// (`WINRConstants.privacyURL` — no server field carries one). Since
+    /// 2.9.4 both open IN-APP: the taps travel through the environment's
+    /// OpenURLAction, which the experience root intercepts into the legal
+    /// webview sheet. A missing rulesUrl leaves that phrase underlined but
+    /// inert, matching the old row's no-op behavior.
     private var legalText: AttributedString {
         var text = AttributedString("Your email lets us contact you if you win. By entering you agree to the Official Rules & Privacy Policy")
         let destinations: [(phrase: String, url: URL?)] = [
@@ -941,19 +976,17 @@ struct WINRV2VerifyEmailChip: View {
 struct WINRV2HowItWorksView: View {
     let accent: Color
     let logoUrl: String?
-    /// Destination for the Privacy choices surface's policy link.
-    let rulesUrl: String?
     let day1Entries: Int
     var visitMode = false
     let onDone: () -> Void
     let onClose: () -> Void
-    /// The delete-my-data flow (owned by the view model). Since 2.9 it is
-    /// reached through the Privacy choices SURFACE, not directly from here.
-    @ObservedObject var optOut: WINRV2OptOutCoordinator
 
-    /// The intermediate "Privacy choices" surface (2.9): policy link + the
-    /// delete action. Delete-my-data no longer pops straight from this screen.
-    @State private var showPrivacyChoices = false
+    /// Routed by the experience root's OpenURLAction into the in-app legal
+    /// webview (2.9.4). The privacy page itself (loaded with ?app=1) carries
+    /// the delete-my-data section, so the old native "Privacy choices" dialog
+    /// is gone; its delete confirmation lives on at the experience root,
+    /// raised by the page's winr://delete bridge.
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         ZStack {
@@ -1000,9 +1033,12 @@ struct WINRV2HowItWorksView: View {
 
                     // Muted privacy entry point — deliberately quiet: present
                     // for those who look for it, invisible to the pitch. Opens
-                    // the Privacy choices surface (2.9); the delete action
-                    // lives THERE now, behind its existing confirmation.
-                    Button(action: { showPrivacyChoices = true }) {
+                    // the Privacy Policy webview directly (2.9.4); the delete
+                    // action lives INSIDE that page now (?app=1), behind the
+                    // same existing confirmation via the winr://delete bridge.
+                    Button(action: {
+                        if let url = URL(string: WINRConstants.privacyURL) { openURL(url) }
+                    }) {
                         Text(WINRV2Strings.privacyChoices)
                             .font(WINRV2Font.inter(12))
                             .foregroundColor(WINRV2Color.textTertiary)
@@ -1013,82 +1049,48 @@ struct WINRV2HowItWorksView: View {
                     .padding(.bottom, 30)
                 }
             }
-
-            if showPrivacyChoices, optOut.phase == .idle {
-                privacyChoicesDialog
-                    .transition(.opacity)
-            }
-
-            if optOut.phase != .idle {
-                optOutDialog
-                    .transition(.opacity)
-            }
         }
         .background(WINRV2Color.panel.ignoresSafeArea())
-        .animation(.easeInOut(duration: 0.2), value: optOut.phase)
-        .animation(.easeInOut(duration: 0.2), value: showPrivacyChoices)
     }
 
-    /// The "Privacy choices" surface: the policy link stays tappable and the
-    /// delete action leads into the EXISTING destructive confirmation.
-    private var privacyChoicesDialog: some View {
-        ZStack {
-            Color.black.opacity(0.55)
-                .ignoresSafeArea()
-                .onTapGesture { showPrivacyChoices = false }
-
-            VStack(spacing: 16) {
-                Text(WINRV2Strings.privacyChoices)
+    private func item(number: String, title: String, body: String) -> some View {
+        HStack(alignment: .top, spacing: 9) {
+            Text("\(number).")
+                .font(WINRV2Font.inter(18, .black))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
                     .font(WINRV2Font.inter(18, .black))
-                    .foregroundColor(.white)
-
-                Button {
-                    // 2.9.2: the actual privacy policy, not rulesUrl.
-                    if let url = URL(string: WINRConstants.privacyURL) {
-                        UIApplication.shared.open(url)
-                    }
-                } label: {
-                    Text(WINRV2Strings.privacyPolicyLink)
-                        .font(WINRV2Font.inter(15, .bold))
-                        .underline()
-                        .foregroundColor(.white)
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    showPrivacyChoices = false
-                    optOut.begin()
-                } label: {
-                    Text(WINRV2Strings.privacyDeleteAction)
-                        .font(WINRV2Font.inter(15, .bold))
-                        .underline()
-                        .foregroundColor(WINRV2Color.errorRed)
-                }
-                .buttonStyle(.plain)
-
-                Button(action: { showPrivacyChoices = false }) {
-                    Text(WINRV2Strings.optOutCancel)
-                        .font(WINRV2Font.inter(14))
-                        .foregroundColor(WINRV2Color.textTertiary)
-                        .underline()
-                }
-                .buttonStyle(.plain)
-                .padding(.top, 4)
+                Text(body)
+                    .font(WINRV2Font.inter(16))
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(22)
-            .frame(maxWidth: 340)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(WINRV2Color.deepCharcoal)
-                    .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.white.opacity(0.12), lineWidth: 1))
-            )
-            .padding(.horizontal, 24)
         }
+        .foregroundColor(.white)
+    }
+}
+
+
+// MARK: - Delete-my-data confirmation (experience root)
+
+/// The destructive delete-my-data confirmation (and its in-flight / failed /
+/// deleted states) — same scrim-plus-card treatment as the winners dialog.
+/// Mounted at the experience ROOT since 2.9.4 so the privacy webview's
+/// winr://delete bridge can raise it from ANY screen; renders nothing while
+/// the coordinator is idle.
+struct WINRV2OptOutDialog: View {
+    @ObservedObject var optOut: WINRV2OptOutCoordinator
+
+    var body: some View {
+        ZStack {
+            if optOut.phase != .idle {
+                dialog
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: optOut.phase)
     }
 
-    /// The destructive confirmation (and its in-flight / failed / deleted
-    /// states) — same scrim-plus-card treatment as the winners dialog.
-    private var optOutDialog: some View {
+    private var dialog: some View {
         ZStack {
             Color.black.opacity(0.55)
                 .ignoresSafeArea()
@@ -1150,20 +1152,7 @@ struct WINRV2HowItWorksView: View {
         }
     }
 
-    private func item(number: String, title: String, body: String) -> some View {
-        HStack(alignment: .top, spacing: 9) {
-            Text("\(number).")
-                .font(WINRV2Font.inter(18, .black))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(WINRV2Font.inter(18, .black))
-                Text(body)
-                    .font(WINRV2Font.inter(16))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .foregroundColor(.white)
-    }
+
 }
 
 
