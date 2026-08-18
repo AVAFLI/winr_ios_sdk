@@ -75,14 +75,11 @@ enum WINRV2Strings {
     static let sessionExpired = "Your session has expired. Please try again."
     static let sessionExpiredRetry = "RETRY"
 
-    // MARK: - Privacy choices / RTD opt-out (how-it-works screen)
+    // MARK: - RTD opt-out (delete-my-data confirmation)
 
-    /// Muted entry-point link at the bottom of the how-it-works screen. Since
-    /// 2.9.4 it opens the Privacy Policy webview directly (loaded with
-    /// ?app=1); the delete-my-data action lives INSIDE that page and reaches
-    /// the destructive confirmation below via the winr://delete bridge. (The
-    /// intermediate native "Privacy choices" dialog is gone.)
-    static let privacyChoices = "Privacy choices"
+    // (2.9.5: the "Privacy choices" entry-point string is gone with its
+    // how-it-works link — the delete path is reached through the Privacy
+    // Policy webview's own delete section via the winr://delete bridge.)
     static let optOutTitle = "Delete my data & stop participating"
     static let optOutBody = "This permanently deletes your WINR data, ends your giveaway participation, and cannot be undone. You can also email info@avafli.com."
     static let optOutConfirm = "DELETE MY DATA"

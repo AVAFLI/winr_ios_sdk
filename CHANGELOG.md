@@ -1,6 +1,12 @@
 # Changelog
 
 
+## 2.9.5 — 2026-08-18
+
+- **Removed the redundant Privacy choices link from How-it-works** — the
+  Privacy Policy links on the capture sentence and the legal rows keep the
+  delete path findable (all opening the in-app privacy webview).
+
 ## 2.9.4 — 2026-08-18
 
 - **Legal pages open in-app** — Official Rules and Privacy Policy now

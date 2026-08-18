@@ -981,13 +981,6 @@ struct WINRV2HowItWorksView: View {
     let onDone: () -> Void
     let onClose: () -> Void
 
-    /// Routed by the experience root's OpenURLAction into the in-app legal
-    /// webview (2.9.4). The privacy page itself (loaded with ?app=1) carries
-    /// the delete-my-data section, so the old native "Privacy choices" dialog
-    /// is gone; its delete confirmation lives on at the experience root,
-    /// raised by the page's winr://delete bridge.
-    @Environment(\.openURL) private var openURL
-
     var body: some View {
         ZStack {
             VStack(spacing: 12) {
@@ -1030,23 +1023,11 @@ struct WINRV2HowItWorksView: View {
                     WINRV2PillButton(accent: accent, title: "GOT IT - START MY STREAK") { onDone() }
                         .padding(.horizontal, 28)
                         .padding(.top, 20)
-
-                    // Muted privacy entry point — deliberately quiet: present
-                    // for those who look for it, invisible to the pitch. Opens
-                    // the Privacy Policy webview directly (2.9.4); the delete
-                    // action lives INSIDE that page now (?app=1), behind the
-                    // same existing confirmation via the winr://delete bridge.
-                    Button(action: {
-                        if let url = URL(string: WINRConstants.privacyURL) { openURL(url) }
-                    }) {
-                        Text(WINRV2Strings.privacyChoices)
-                            .font(WINRV2Font.inter(12))
-                            .foregroundColor(WINRV2Color.textTertiary)
-                            .underline()
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.top, 18)
-                    .padding(.bottom, 30)
+                        .padding(.bottom, 30)
+                    // (2.9.5: the muted "Privacy choices" fine-print link is
+                    // gone — the Privacy Policy links on the capture sentence
+                    // and the legal rows keep the delete path findable, all
+                    // routing into the in-app privacy webview.)
                 }
             }
         }
